@@ -5,6 +5,7 @@ import handler from "vinext/server/app-router-entry";
 interface Env {
   ASSETS: Fetcher;
   B200H_ISSUER_PRIVATE_KEY?: string;
+  B200H_BUYER_PRIVATE_KEY?: string;
   B200H_MINT_ADDRESS?: string;
   SOLANA_DEVNET_RPC_URL?: string;
   SOLANA_DEVNET_WS_URL?: string;
@@ -55,6 +56,7 @@ function exposeServerRuntimeConfig(env: Env) {
   const serverEnvironment = process.env as Record<string, string | undefined>;
   const keys = [
     "B200H_ISSUER_PRIVATE_KEY",
+    "B200H_BUYER_PRIVATE_KEY",
     "B200H_MINT_ADDRESS",
     "SOLANA_DEVNET_RPC_URL",
     "SOLANA_DEVNET_WS_URL",

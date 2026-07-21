@@ -28,6 +28,28 @@ type TokenIssuance =
   | { status: "confirmed"; receipt: DevnetReceipt }
   | { status: "failed"; message: string };
 
+type ComputeRedemptionReceipt = {
+  amount: number;
+  explorerUrl: string;
+  signature: string;
+  mintAddress: string;
+  buyerWallet: string;
+  treasuryWallet: string;
+  network: "devnet";
+};
+
+type ComputeRedemption =
+  | { status: "idle" }
+  | { status: "redeeming" }
+  | { status: "confirmed"; receipt: ComputeRedemptionReceipt }
+  | { status: "failed"; message: string };
+
+type BuyerWalletState =
+  | { status: "loading" }
+  | { status: "unconfigured" }
+  | { status: "ready"; balance: number }
+  | { status: "error"; message: string };
+
 const navigation: { id: View; label: string; short: string }[] = [
   { id: "overview", label: "Overview", short: "O" },
   { id: "exchange", label: "Exchange", short: "E" },
@@ -240,9 +262,73 @@ function BuyerWorkspace({ view, onNavigate, onToast }: { view: BuyerView; onNavi
   const [stakeAmount, setStakeAmount] = useState("4,000");
   const [stakeTerm, setStakeTerm] = useState<StakeTerm>("90");
   const [stakeLocked, setStakeLocked] = useState(false);
+  const [computeRedemption, setComputeRedemption] = useState<ComputeRedemption>({ status: "idle" });
+  const [buyerWallet, setBuyerWallet] = useState<BuyerWalletState>({ status: "loading" });
+
+  const loadBuyerWallet = async () => {
+    try {
+      const response = await fetch("/api/tokenized-compute/buyer-balance", { cache: "no-store" });
+      const payload = await response.json() as { configured?: boolean; balance?: number; error?: string };
+
+      if (!response.ok || payload.error) {
+        setBuyerWallet({ status: "error", message: payload.error || "The Devnet wallet balance could not be read." });
+        return;
+      }
+
+      if (!payload.configured || typeof payload.balance !== "number") {
+        setBuyerWallet({ status: "unconfigured" });
+        return;
+      }
+
+      setBuyerWallet({ status: "ready", balance: payload.balance });
+    } catch {
+      setBuyerWallet({ status: "error", message: "The Devnet wallet balance could not be read." });
+    }
+  };
+
+  useEffect(() => {
+    // Fetching the Devnet balance on mount; the setState calls happen after
+    // the internal await, not synchronously within this effect body.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadBuyerWallet();
+  }, []);
+
+  const resetRedemption = () => setComputeRedemption((current) => current.status === "idle" ? current : { status: "idle" });
+
+  const redeemComputeTokens = async (hours: number) => {
+    setComputeRedemption({ status: "redeeming" });
+
+    try {
+      const response = await fetch("/api/tokenized-compute/redeem", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ hours, idempotencyKey: crypto.randomUUID() }),
+      });
+      const payload = await response.json() as ComputeRedemptionReceipt & { error?: string };
+
+      if (!response.ok || payload.error) {
+        throw new Error(payload.error || "The Devnet redemption could not be completed.");
+      }
+
+      setComputeRedemption({ status: "confirmed", receipt: payload });
+      onToast("Cluster order confirmed", `${payload.amount.toLocaleString()} B200H redeemed on Devnet. Your cluster is reserved.`);
+      void loadBuyerWallet();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "The Devnet redemption could not be completed.";
+      setComputeRedemption({ status: "failed", message });
+      onToast("Redemption could not complete", message);
+    }
+  };
 
   if (view === "dashboard") return <BuyerDashboard onNavigate={onNavigate} />;
-  if (view === "compute") return <ComputeExchange gpu={gpu} setGpu={setGpu} gpuCount={gpuCount} setGpuCount={setGpuCount} duration={duration} setDuration={setDuration} payment={payment} setPayment={setPayment} onToast={onToast} />;
+  if (view === "compute") return <ComputeExchange
+    gpu={gpu} setGpu={(value) => { setGpu(value); resetRedemption(); }}
+    gpuCount={gpuCount} setGpuCount={(value) => { setGpuCount(value); resetRedemption(); }}
+    duration={duration} setDuration={(value) => { setDuration(value); resetRedemption(); }}
+    payment={payment} setPayment={(value) => { setPayment(value); resetRedemption(); }}
+    wallet={buyerWallet} redemption={computeRedemption} onRedeem={redeemComputeTokens}
+    onToast={onToast}
+  />;
   if (view === "contracts") return <ContractTransfer mode={transferMode} setMode={setTransferMode} selectedContract={selectedContract} setSelectedContract={setSelectedContract} onToast={onToast} />;
   if (view === "auctions") return <TokenAuctions bidHours={bidHours} setBidHours={setBidHours} bidPrice={bidPrice} setBidPrice={setBidPrice} submitted={auctionSubmitted} onSubmit={() => { setAuctionSubmitted(true); onToast("Bid submitted", "Your 5,000-token limit bid is now active in auction B200-012."); }} />;
   return <TokenMarket side={marketSide} setSide={setMarketSide} amount={marketAmount} setAmount={setMarketAmount} stakeAmount={stakeAmount} setStakeAmount={setStakeAmount} stakeTerm={stakeTerm} setStakeTerm={setStakeTerm} stakeLocked={stakeLocked} onStake={() => { setStakeLocked(true); onToast("Compute Tokens locked", `${stakeAmount} B200-H is now earning a share of verified sublease revenue at 40% APY.`); }} onToast={onToast} />;
@@ -288,13 +374,16 @@ function BuyerDashboard({ onNavigate }: { onNavigate: (view: BuyerView) => void 
   );
 }
 
-function ComputeExchange({ gpu, setGpu, gpuCount, setGpuCount, duration, setDuration, payment, setPayment, onToast }: { gpu: string; setGpu: (value: string) => void; gpuCount: number; setGpuCount: (value: number) => void; duration: number; setDuration: (value: number) => void; payment: PaymentRail; setPayment: (value: PaymentRail) => void; onToast: (title: string, detail: string) => void }) {
+function ComputeExchange({ gpu, setGpu, gpuCount, setGpuCount, duration, setDuration, payment, setPayment, wallet, redemption, onRedeem, onToast }: { gpu: string; setGpu: (value: string) => void; gpuCount: number; setGpuCount: (value: number) => void; duration: number; setDuration: (value: number) => void; payment: PaymentRail; setPayment: (value: PaymentRail) => void; wallet: BuyerWalletState; redemption: ComputeRedemption; onRedeem: (hours: number) => void; onToast: (title: string, detail: string) => void }) {
   const selected = gpuOptions.find((option) => option.id === gpu) ?? gpuOptions[0];
   const hours = gpuCount * 24 * duration;
   const computeCost = hours * selected.price;
   const storageCost = gpuCount * duration * 6;
-  const tokenBalance = 12400;
+  const tokenBalance = wallet.status === "ready" ? wallet.balance : 0;
   const tokenEligible = gpu === "B200";
+  const redeeming = redemption.status === "redeeming";
+  const redeemed = redemption.status === "confirmed";
+  const walletReady = wallet.status === "ready";
   return (
     <>
       <SectionTitle eyebrow="DIRECT PURCHASE · EXCHANGE" title="Deploy a GPU cluster" body="Select production-ready capacity, configure it around your workload, then settle in USD, USDC, or redeem Compute Tokens." />
@@ -328,10 +417,22 @@ function ComputeExchange({ gpu, setGpu, gpuCount, setGpuCount, duration, setDura
           <div className="payment-rails" role="radiogroup" aria-label="Payment method">
             {(["USD", "USDC", "TOKEN"] as PaymentRail[]).map((rail) => <button key={rail} className={payment === rail ? "payment-rail selected" : "payment-rail"} onClick={() => setPayment(rail)} role="radio" aria-checked={payment === rail}><span className="payment-radio" /><div><strong>{rail === "TOKEN" ? "Compute Token" : rail}</strong><small>{rail === "USD" ? "Invoice or card" : rail === "USDC" ? "On-chain settlement" : "Redeem GPU hours"}</small></div>{rail === "TOKEN" && <span className="recommended">Best value</span>}</button>)}
           </div>
-          {payment === "TOKEN" && <div className={tokenEligible && tokenBalance >= hours ? "token-redemption valid" : "token-redemption warning"}><div><span>Required</span><strong>{hours.toLocaleString()} {selected.id} tokens</strong></div><div><span>Wallet balance</span><strong>{tokenBalance.toLocaleString()}h</strong></div><p>{tokenEligible ? "Tokens cover base GPU compute. Storage settles separately in USDC." : `${selected.id} is not covered by your B200 Token balance. Choose USD or USDC.`}</p></div>}
+          {payment === "TOKEN" && <div className={tokenEligible && walletReady && tokenBalance >= hours ? "token-redemption valid" : "token-redemption warning"}>
+            <div><span>Required</span><strong>{hours.toLocaleString()} {selected.id} tokens</strong></div>
+            <div><span>Wallet balance</span><strong>{wallet.status === "loading" ? "Loading…" : wallet.status === "ready" ? `${tokenBalance.toLocaleString()}h` : wallet.status === "unconfigured" ? "Not configured" : "Unavailable"}</strong></div>
+            <p>{!tokenEligible ? `${selected.id} is not covered by your B200 Token balance. Choose USD or USDC.` : wallet.status === "unconfigured" ? "The Devnet buyer wallet is not configured on this server. Choose USD or USDC, or set B200H_BUYER_PRIVATE_KEY." : wallet.status === "error" ? wallet.message : "Tokens cover base GPU compute on a real Devnet transfer. Storage settles separately in USDC."}</p>
+          </div>}
+          {redemption.status === "failed" && <div className="issuance-error"><strong>Redemption needs attention</strong><span>{redemption.message}</span></div>}
+          {redemption.status === "confirmed" && <ComputeRedemptionReceiptCard receipt={redemption.receipt} />}
           <div className="checkout-total"><span>{payment === "TOKEN" && tokenEligible ? "Token redemption" : "Total due"}</span><strong>{payment === "TOKEN" && tokenEligible ? `${hours.toLocaleString()}h + $${storageCost.toLocaleString()}` : `$${(computeCost + storageCost).toLocaleString(undefined, { maximumFractionDigits: 0 })}`}</strong><small>{payment === "TOKEN" && tokenEligible ? "B200 tokens + USDC storage" : `${payment} settlement`}</small></div>
-          <button className="button primary checkout-button" onClick={() => onToast("Cluster order ready", `${gpuCount} ${selected.id} GPUs are reserved. Review and confirm the ${payment} settlement.`)} disabled={payment === "TOKEN" && (!tokenEligible || tokenBalance < hours)}>Review & deploy <Arrow /></button>
-          <p className="checkout-note"><CheckIcon /> Capacity is verified before settlement. No token is burned until you confirm.</p>
+          <button
+            className="button primary checkout-button"
+            onClick={() => payment === "TOKEN" ? onRedeem(hours) : onToast("Cluster order ready", `${gpuCount} ${selected.id} GPUs are reserved. Review and confirm the ${payment} settlement.`)}
+            disabled={redeeming || redeemed || (payment === "TOKEN" && (!tokenEligible || !walletReady || tokenBalance < hours))}
+          >
+            {payment === "TOKEN" ? (redeemed ? "Redeemed on Devnet" : redeeming ? "Redeeming on Devnet…" : "Review & deploy") : "Review & deploy"} <Arrow />
+          </button>
+          <p className="checkout-note"><CheckIcon /> {payment === "TOKEN" ? "Confirming settles a real Devnet transfer of B200H tokens." : "Capacity is verified before settlement. No token is burned until you confirm."}</p>
         </aside>
       </div>
     </>
@@ -863,6 +964,16 @@ function DevnetReceiptCard({ receipt }: { receipt: DevnetReceipt }) {
 
 function shortAddress(value: string) {
   return value.length > 16 ? `${value.slice(0, 7)}…${value.slice(-7)}` : value;
+}
+
+function ComputeRedemptionReceiptCard({ receipt }: { receipt: ComputeRedemptionReceipt }) {
+  return <section className="devnet-receipt" aria-label="Solana Devnet redemption receipt">
+    <div className="devnet-receipt-head"><span className="devnet-status"><i className="live-dot" /> Confirmed on Solana Devnet</span><span className="devnet-token">B200H</span></div>
+    <strong>{receipt.amount.toLocaleString()} B200H redeemed</strong>
+    <p>Redeemed from your wallet to reserve this cluster. Storage still settles in USDC.</p>
+    <div className="devnet-receipt-meta"><span>Mint <code>{shortAddress(receipt.mintAddress)}</code></span><span>Transaction <code>{shortAddress(receipt.signature)}</code></span></div>
+    <a href={receipt.explorerUrl} target="_blank" rel="noreferrer">View Devnet proof <Arrow /></a>
+  </section>;
 }
 
 function Tokens({ step, setStep, verification, onRunVerification, amount, setAmount, issuance, onIssue, onToast }: { step: WorkflowStep; setStep: (step: WorkflowStep) => void; verification: "idle" | "running" | "complete"; onRunVerification: () => void; amount: string; setAmount: (value: string) => void; issuance: TokenIssuance; onIssue: () => void; onToast: (title: string, detail: string) => void }) {

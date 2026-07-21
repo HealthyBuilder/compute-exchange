@@ -2,12 +2,12 @@
 
 ## Purpose
 
-This is a product demo with switchable Supplier and Buyer workspaces. Payments, benchmarks, contracts, auctions, and trading remain mock interactions. The Supplier **Tokenized Compute** approval is the one live slice: it creates a real B200H issuance transaction on Solana Devnet through a platform-controlled server signer.
+This is a product demo with switchable Supplier and Buyer workspaces. Benchmarks, contracts, auctions, and trading remain mock interactions. Two slices are live: the Supplier **Tokenized Compute** approval creates a real B200H issuance transaction on Solana Devnet, and the Buyer **Buy Compute** checkout creates a real B200H redemption transfer, both through platform-controlled server signers. USD and USDC settlement on Buy Compute remain mock interactions.
 
 ## Buyer workspace
 
 - **Dashboard** makes the four buyer jobs explicit: buy compute directly, transfer or sublease contracts, bid in primary token auctions, and trade tokens on the secondary market.
-- **Buy Compute** follows an AI-lab cluster workflow: select GPU inventory, configure count, region, term, storage, and environment, then settle in USD, USDC, or eligible Compute Tokens.
+- **Buy Compute** follows an AI-lab cluster workflow: select GPU inventory, configure count, region, term, storage, and environment, then settle in USD, USDC, or eligible Compute Tokens. Choosing Compute Token settlement submits a real B200H transfer on Solana Devnet from a platform-controlled demo buyer wallet back to the platform treasury; USD and USDC remain mock settlement.
 - **Contracts & Transfer** starts from owned contracts and time-to-expiry. Buyers may share a portion of capacity as a sublease or assign the full remaining term.
 - **Compute Auctions** separates total minted supply, actual sold supply, clearing price, and the buyer's final allocation.
 - **Compute Market** presents a live line chart, compact bid/ask order book, buy/sell ticket, and current token position. Tokens remain redeemable for eligible GPU compute.
@@ -83,6 +83,13 @@ Solana Keychain remains an implementation detail for a later signer-provider cha
 - The Devnet issuer is a dedicated test-only key. It is stored in an ignored `.dev.vars` file and is never returned by an API route or included in the client bundle.
 - Bootstrap needs a small amount of free Devnet SOL to create the mint and associated token account. The development environment should fund that key before the one-time global-mint bootstrap runs.
 - Until `B200H_MINT_ADDRESS` exists, the issuance endpoint returns a safe configuration error rather than minting anything. Once the global mint exists, every Supplier approval produces an individual Devnet transaction receipt.
+
+### Buyer redemption (Devnet)
+
+- `scripts/bootstrap-b200h-buyer-devnet.mjs` runs once, after the issuer bootstrap, to generate a second dedicated test-only key (`B200H_BUYER_PRIVATE_KEY`) representing the demo buyer ("Atlas Research") and seed it with an initial B200H balance transferred from the platform issuer.
+- The live Buy Compute checkout signs a Token-2022 transfer with the buyer key as authority and the existing issuer key as fee payer, so the demo buyer wallet never needs its own Devnet SOL.
+- `GET /api/tokenized-compute/buyer-balance` reads the buyer's real on-chain balance so the checkout's "Wallet balance" figure and eligibility gate reflect actual Devnet state rather than a fixed number.
+- Until `B200H_BUYER_PRIVATE_KEY` exists, the checkout falls back to a clear "not configured" state and Compute Token settlement is disabled; USD and USDC remain selectable.
 
 ### Current Devnet state — 2026-07-20
 

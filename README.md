@@ -1,8 +1,10 @@
 # Compute Exchange Demo
 
-A Supplier-side B200 capacity marketplace demo. Its Tokenized Compute approval
-can issue the global B200H token on Solana Devnet through a platform-controlled
-server signer; all other market interactions are presentation-only.
+A B200 capacity marketplace demo with Supplier and Buyer workspaces. The
+Supplier Tokenized Compute approval issues the global B200H token on Solana
+Devnet, and the Buyer Buy Compute checkout redeems B200H back to the platform
+treasury, both through platform-controlled server signers; all other market
+interactions are presentation-only.
 
 ## Prerequisites
 
@@ -87,7 +89,9 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 
 ## Useful Commands
 
-- `npm run dev:node`: start the local Node demo at `http://localhost:3001`; use this for real Devnet issuance.
+- `npm run dev:node`: start the local Node demo at `http://localhost:3001`; use this for real Devnet issuance and redemption.
+- `node scripts/bootstrap-b200h-devnet.mjs`: one-time bootstrap that creates the global B200H mint and platform issuer key.
+- `node scripts/bootstrap-b200h-buyer-devnet.mjs`: one-time bootstrap (run after the issuer bootstrap) that creates and seeds the demo buyer wallet used by Buy Compute's Devnet redemption.
 - `npm run build:node`: create the Node build intended for an AWS deployment.
 - `npm run start:node`: serve that Node build.
 - `npm run dev`: start the legacy Worker/UI preview. It is useful for layout work, but Solana's public Devnet RPC rejects the Worker egress path.

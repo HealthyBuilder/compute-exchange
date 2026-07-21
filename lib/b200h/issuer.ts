@@ -1,15 +1,13 @@
 import {
   address,
   createKeyPairSignerFromPrivateKeyBytes,
-  createSolanaRpcFromTransport,
   getBase64EncodedWireTransaction,
   getSignatureFromTransaction,
   signTransactionMessageWithSigners,
 } from "@solana/kit";
 import { createMintToTransaction } from "@solana/mosaic-sdk";
-import { parseJsonWithBigInts } from "@solana/rpc-spec-types";
+import { confirmDevnetTransaction, createDevnetRpc, DEVNET_RPC_URL, explorerTxUrl } from "./rpc";
 
-const DEVNET_RPC_URL = "https://api.devnet.solana.com";
 const MAX_ISSUANCE_HOURS = 75_600;
 
 export type IssuanceReceipt = {
@@ -62,40 +60,6 @@ function validateAmount(value: number): number {
   return value;
 }
 
-/**
- * The public Devnet RPC rejects the SDK transport's explicitly supplied
- * Content-Length header in the local Worker runtime. This transport keeps
- * Mosaic on its normal Solana RPC interface while allowing the runtime to set
- * that header itself. The BigInt parser preserves Solana's RPC value types.
- */
-function createDevnetRpc(rpcUrl: string) {
-  const transport = async <TResponse>({
-    payload,
-    signal,
-  }: {
-    payload: unknown;
-    signal?: AbortSignal;
-  }): Promise<TResponse> => {
-    const response = await fetch(rpcUrl, {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        "content-type": "application/json; charset=utf-8",
-      },
-      body: JSON.stringify(payload),
-      signal,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Devnet RPC request failed (${response.status} ${response.statusText}).`);
-    }
-
-    return parseJsonWithBigInts(await response.text()) as TResponse;
-  };
-
-  return createSolanaRpcFromTransport(transport);
-}
-
 export function getIssuerStatus() {
   const issuerConfigured = Boolean(process.env.B200H_ISSUER_PRIVATE_KEY);
   const mintConfigured = Boolean(process.env.B200H_MINT_ADDRESS);
@@ -139,26 +103,7 @@ export async function issueB200Hours(hours: number): Promise<IssuanceReceipt> {
     skipPreflight: false,
   }).send();
 
-  let confirmed = false;
-  for (let attempt = 0; attempt < 12; attempt += 1) {
-    const { value } = await rpc.getSignatureStatuses([signature]).send();
-    const status = value[0];
-
-    if (status?.err) {
-      throw new Error("The Devnet transaction was rejected.");
-    }
-
-    if (status?.confirmationStatus === "confirmed" || status?.confirmationStatus === "finalized") {
-      confirmed = true;
-      break;
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 650));
-  }
-
-  if (!confirmed) {
-    throw new Error("The Devnet transaction was submitted but did not confirm in time.");
-  }
+  await confirmDevnetTransaction(rpc, signature);
 
   const signatureText = signature.toString();
 
@@ -168,6 +113,6 @@ export async function issueB200Hours(hours: number): Promise<IssuanceReceipt> {
     inventoryOwner: issuer.address,
     network: "devnet",
     signature: signatureText,
-    explorerUrl: `https://explorer.solana.com/tx/${signatureText}?cluster=devnet`,
+    explorerUrl: explorerTxUrl(signatureText),
   };
 }
