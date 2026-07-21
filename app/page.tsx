@@ -30,10 +30,10 @@ type TokenIssuance =
 
 const navigation: { id: View; label: string; short: string }[] = [
   { id: "overview", label: "Overview", short: "O" },
-  { id: "revenue", label: "Revenue", short: "R" },
   { id: "exchange", label: "Exchange", short: "E" },
   { id: "tokens", label: "Tokenized Compute", short: "T" },
   { id: "leases", label: "Lease Compute", short: "L" },
+  { id: "revenue", label: "Revenue", short: "R" },
 ];
 
 const buyerNavigation: { id: BuyerView; label: string; short: string }[] = [
