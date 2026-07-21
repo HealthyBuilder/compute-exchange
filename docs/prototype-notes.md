@@ -53,7 +53,7 @@ The current shared demo is deployed on a dedicated AWS EC2 instance, separate fr
 - Its security group has no inbound rules. The app and reverse proxy listen only on `127.0.0.1`.
 - A Cloudflare Tunnel is the only external route to the demo; it does not require opening inbound AWS ports.
 - The tunnel endpoint is protected with HTTP Basic Authentication. The live URL and credential are communicated separately and are not stored in this repository.
-- The hosted app is still mock-only and contains no production buyer, supplier, payment, or chain data.
+- The hosted app has one live Devnet-only capability: a Supplier approval can issue B200H through the platform signer. It contains no production buyer, supplier, payment, capacity, or mainnet-chain data.
 
 For a durable share link, replace the account-less quick tunnel with a named Cloudflare Tunnel and Cloudflare Access policy restricted to the intended cofounder emails.
 
@@ -67,7 +67,7 @@ The **Tokenized Compute** path now issues a real Devnet token while keeping the 
 
 - The supplier sees **Approve issuance**, not “connect wallet” or “sign a transaction.” The approval can be attached to the supplier's normal account session, SSO, or passkey later.
 - The prototype validates the approved issuance amount and configured mint before it submits to the chain. Production must add capacity, verification, authorization, and idempotency records in durable storage.
-- A platform-controlled issuance authority signs the Devnet transaction. The key never reaches the supplier's browser. Before any durable deployment, move the issuer into a managed signer or secret store; Solana Keychain is the intended signer-provider abstraction, not supplier authentication.
+- A platform-controlled issuance authority signs the Devnet transaction. The key never reaches the supplier's browser. The shared Devnet demo retrieves its test-only issuer configuration from an encrypted AWS SSM Parameter Store entry at service start, with an EC2 role limited to that one parameter. Before any production deployment, move the authority to a managed signer; Solana Keychain is the intended signer-provider abstraction, not supplier authentication.
 - The first token is a simple integer **B200 Hour Token**: one unit represents one verified B200 GPU hour. The on-chain mint proves issuance and supply; batch, data-center, contract, and redemption details remain in the platform record.
 - The resulting screen should show a plain-language receipt, such as “48,000 B200 Hour Tokens issued,” with an optional **View Devnet proof** link for users who want to inspect the transaction.
 
@@ -86,9 +86,10 @@ Solana Keychain remains an implementation detail for a later signer-provider cha
 - Global B200H mint: [`VwSDjfc2AAufxti2Vu2CGoY78LHBjsFTtwE7GhyTW8n`](https://explorer.solana.com/address/VwSDjfc2AAufxti2Vu2CGoY78LHBjsFTtwE7GhyTW8n?cluster=devnet)
 - Mint creation transaction: [`3Cuv…GzKQWu`](https://explorer.solana.com/tx/3CuvmG7cNdKkJ3zf9xg72Vzv8cyHVgHBcQXKVJp7AY919hHXNtuXcEDmRz5dRi3F7DqN9271dipn1ESW92GzKQWu?cluster=devnet)
 - First platform issuance: **48,000 B200H** to the platform inventory account, confirmed in [`5GfB…8N6L`](https://explorer.solana.com/tx/5GfBfHZoEG6saGNDzwn1yAh7sTSVuKjdHx5N3zNMGRkXM38Fjt6wdSGcrEnHik9aEmZphBdajM5k2iWJ4GAo8N6L?cluster=devnet).
+- Deployed-EC2 health issuance: **1 B200H**, confirmed in [`4PJR…ojxu`](https://explorer.solana.com/tx/4PJRfoYJFWAeUhS9JLtMiHxigVyRGeAhqA8ih1CRTKeWWavSJPwFe2csK3ooaSCzTRK5yn6t15NBaA7xo4TMojxu?cluster=devnet).
 
 ### Runtime note
 
-The live signer endpoint requires a Node server runtime. The Cloudflare Worker preview was able to render the UI but its egress to Solana's public Devnet RPC returned `403`; the local Node preview and the planned AWS Node deployment complete the same Mosaic transaction successfully. Do not place the Devnet issuer seed in a Worker variable, browser bundle, or committed file.
+The live signer endpoint requires a Node server runtime. The Cloudflare Worker preview was able to render the UI but its egress to Solana's public Devnet RPC returned `403`; the local Node preview and the deployed AWS Node service complete the same Mosaic transaction successfully. Do not place the Devnet issuer seed in a Worker variable, browser bundle, or committed file.
 
 Use `npm run dev:node` for the local live-issuance demo. The existing `npm run dev` command remains the Worker/UI preview and should not be used to exercise the signing endpoint.
