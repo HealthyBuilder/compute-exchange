@@ -44,6 +44,7 @@ test("includes all buyer workflows and settlement rails", async () => {
   assert.match(page, /function ContractTransfer/);
   assert.match(page, /function TokenAuctions/);
   assert.match(page, /function TokenMarket/);
+  assert.match(page, /type StakeTerm = "30" \| "90" \| "180"/);
   assert.match(page, /BUYER WORKSPACE/);
   assert.match(page, /Buy, trade, hedge compute in one hub/);
   assert.match(page, /Deploy GPUs, manage contract time, participate in new compute token auction, or hedge compute inventory in one workspace\./);
@@ -53,6 +54,11 @@ test("includes all buyer workflows and settlement rails", async () => {
   assert.match(page, /Compute Auctions/);
   assert.match(page, /Compute Market/);
   assert.match(page, /function TokenPriceChart/);
+  assert.match(page, /STAKE & EARN/);
+  assert.match(page, /Lock Compute Tokens\. Share sublease revenue\./);
+  assert.match(page, /40% APY/);
+  assert.match(page, /Revenue shared with supplier/);
+  assert.match(page, /Staked for revenue/);
   assert.doesNotMatch(page, /chart-bars/);
   assert.doesNotMatch(page, /buyer-route-index/);
   assert.doesNotMatch(page, /PRIMARY AUCTIONS/);
@@ -71,5 +77,8 @@ test("includes all buyer workflows and settlement rails", async () => {
   assert.match(css, /\.market-layout/);
   assert.match(css, /\.market-header/);
   assert.match(css, /\.token-line-canvas/);
+  assert.match(css, /\.stake-vault/);
+  assert.match(css, /\.stake-economics/);
+  assert.match(css, /\.stake-ticket/);
   assert.match(revenueCss, /\.revenue-summary-grid/);
 });

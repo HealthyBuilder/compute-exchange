@@ -217,6 +217,7 @@ export default function Home() {
 
 type PaymentRail = "USD" | "USDC" | "TOKEN";
 type TransferMode = "share" | "full";
+type StakeTerm = "30" | "90" | "180";
 
 const gpuOptions = [
   { id: "B200", name: "NVIDIA B200", count: "x8–x64", price: 3.82, vram: "180 GB", region: "Singapore", badge: "Best for training" },
@@ -236,12 +237,15 @@ function BuyerWorkspace({ view, onNavigate, onToast }: { view: BuyerView; onNavi
   const [auctionSubmitted, setAuctionSubmitted] = useState(false);
   const [marketSide, setMarketSide] = useState<"buy" | "sell">("buy");
   const [marketAmount, setMarketAmount] = useState("1,000");
+  const [stakeAmount, setStakeAmount] = useState("4,000");
+  const [stakeTerm, setStakeTerm] = useState<StakeTerm>("90");
+  const [stakeLocked, setStakeLocked] = useState(false);
 
   if (view === "dashboard") return <BuyerDashboard onNavigate={onNavigate} />;
   if (view === "compute") return <ComputeExchange gpu={gpu} setGpu={setGpu} gpuCount={gpuCount} setGpuCount={setGpuCount} duration={duration} setDuration={setDuration} payment={payment} setPayment={setPayment} onToast={onToast} />;
   if (view === "contracts") return <ContractTransfer mode={transferMode} setMode={setTransferMode} selectedContract={selectedContract} setSelectedContract={setSelectedContract} onToast={onToast} />;
   if (view === "auctions") return <TokenAuctions bidHours={bidHours} setBidHours={setBidHours} bidPrice={bidPrice} setBidPrice={setBidPrice} submitted={auctionSubmitted} onSubmit={() => { setAuctionSubmitted(true); onToast("Bid submitted", "Your 5,000-token limit bid is now active in auction B200-012."); }} />;
-  return <TokenMarket side={marketSide} setSide={setMarketSide} amount={marketAmount} setAmount={setMarketAmount} onToast={onToast} />;
+  return <TokenMarket side={marketSide} setSide={setMarketSide} amount={marketAmount} setAmount={setMarketAmount} stakeAmount={stakeAmount} setStakeAmount={setStakeAmount} stakeTerm={stakeTerm} setStakeTerm={setStakeTerm} stakeLocked={stakeLocked} onStake={() => { setStakeLocked(true); onToast("Compute Tokens locked", `${stakeAmount} B200-H is now earning a share of verified sublease revenue at 40% APY.`); }} onToast={onToast} />;
 }
 
 function BuyerDashboard({ onNavigate }: { onNavigate: (view: BuyerView) => void }) {
@@ -496,10 +500,17 @@ function TokenPriceChart({ timeframe }: { timeframe: string }) {
   return <canvas ref={canvasRef} className="token-line-canvas" role="img" aria-label={`B200 Compute Token ${timeframe} price line chart`} />;
 }
 
-function TokenMarket({ side, setSide, amount, setAmount, onToast }: { side: "buy" | "sell"; setSide: (value: "buy" | "sell") => void; amount: string; setAmount: (value: string) => void; onToast: (title: string, detail: string) => void }) {
+function TokenMarket({ side, setSide, amount, setAmount, stakeAmount, setStakeAmount, stakeTerm, setStakeTerm, stakeLocked, onStake, onToast }: { side: "buy" | "sell"; setSide: (value: "buy" | "sell") => void; amount: string; setAmount: (value: string) => void; stakeAmount: string; setStakeAmount: (value: string) => void; stakeTerm: StakeTerm; setStakeTerm: (value: StakeTerm) => void; stakeLocked: boolean; onStake: () => void; onToast: (title: string, detail: string) => void }) {
   const [timeframe, setTimeframe] = useState("1D");
   const asks = [["3.24", "2,400", "7,776"], ["3.21", "4,850", "15,568"], ["3.19", "1,920", "6,125"], ["3.18", "8,400", "26,712"]];
   const bids = [["3.16", "5,200", "16,432"], ["3.14", "3,600", "11,304"], ["3.12", "9,480", "29,578"], ["3.09", "2,100", "6,489"]];
+  const availableToStake = 10_240;
+  const stakeTokens = Math.max(0, Number(stakeAmount.replace(/,/g, "")) || 0);
+  const stakeDays = Number(stakeTerm);
+  const projectedRevenue = stakeTokens * 3.17 * 0.4 * (stakeDays / 365);
+  const stakedBalance = stakeLocked ? stakeTokens : 0;
+  const availableToTrade = Math.max(0, availableToStake - stakedBalance);
+  const invalidStake = stakeTokens <= 0 || stakeTokens > availableToStake;
   return (
     <>
       <SectionTitle eyebrow="COMPUTE MARKET" title="Trade B200 Compute Tokens" body="Buy tokenized GPU hours before you need them, sell surplus inventory, or hold tokens for future compute redemption." />
@@ -524,7 +535,28 @@ function TokenMarket({ side, setSide, amount, setAmount, onToast }: { side: "buy
           <p className="checkout-note"><CheckIcon /> Tokens remain redeemable for verified B200 compute after trade settlement.</p>
         </aside>
       </div>
-      <section className="section-block token-position"><div><p className="eyebrow">YOUR POSITION</p><h2>12,400 B200 Hour Tokens</h2><span>Average cost $2.91 · Unrealized P&L <strong>+$3,224</strong></span></div><div className="position-actions"><div><small>Available to trade</small><strong>10,240h</strong></div><div><small>Committed to redemption</small><strong>2,160h</strong></div></div></section>
+      <section className={`section-block stake-vault ${stakeLocked ? "is-locked" : ""}`}>
+        <div className="stake-story">
+          <div className="block-heading"><div><p className="eyebrow">STAKE & EARN</p><h2>Lock Compute Tokens. Share sublease revenue.</h2></div><span className="stake-apy-pill">40% APY</span></div>
+          <p className="stake-lead">Locked B200-H tokens represent compute capacity committed to the sublease pool. When that capacity is rented, you share the resulting income with the supplier.</p>
+          <div className="stake-economics">
+            <div><small>TARGET APY</small><strong>40.0%</strong><span>Funded by completed subleases</span></div>
+            <div><small>PROJECTED {stakeTerm}-DAY SHARE</small><strong>${projectedRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong><span>Based on ${stakeTokens.toLocaleString()} B200-H</span></div>
+            <div><small>REVENUE ALIGNMENT</small><strong>Buyer + Supplier</strong><span>Both earn when compute is used</span></div>
+          </div>
+          <div className="stake-flow" aria-label="Staking revenue flow"><span>Lock B200-H</span><Arrow /><span>Capacity enters sublease pool</span><Arrow /><span>Revenue shared with supplier</span></div>
+        </div>
+        <aside className="stake-ticket">
+          <div className="stake-ticket-head"><div><p className="eyebrow">YOUR STAKE</p><h3>{stakeLocked ? "Stake active" : "Configure lock"}</h3></div><span className={stakeLocked ? "stake-status active" : "stake-status"}>{stakeLocked ? "Earning" : "Ready"}</span></div>
+          <label>Amount to lock<div className="input-suffix"><input inputMode="numeric" value={stakeAmount} onChange={(event) => setStakeAmount(event.target.value)} disabled={stakeLocked} aria-label="B200 Hour Tokens to lock" /><span>B200-H</span></div></label>
+          <div className="stake-quick"><button type="button" onClick={() => setStakeAmount("2,560")} disabled={stakeLocked}>25%</button><button type="button" onClick={() => setStakeAmount("5,120")} disabled={stakeLocked}>50%</button><button type="button" onClick={() => setStakeAmount("7,680")} disabled={stakeLocked}>75%</button><button type="button" onClick={() => setStakeAmount("10,240")} disabled={stakeLocked}>Max</button></div>
+          <div className="stake-term"><span>Lock term</span><div role="group" aria-label="Stake lock term">{(["30", "90", "180"] as StakeTerm[]).map((term) => <button type="button" key={term} className={stakeTerm === term ? "active" : ""} onClick={() => setStakeTerm(term)} disabled={stakeLocked}>{term} days</button>)}</div></div>
+          <div className="stake-summary"><div><span>Token value</span><strong>${(stakeTokens * 3.17).toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></div><div><span>Projected revenue share</span><strong>${projectedRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong></div><div><span>Available after lock</span><strong>{Math.max(0, availableToStake - stakeTokens).toLocaleString()} B200-H</strong></div></div>
+          <button className="button stake-button" onClick={onStake} disabled={invalidStake || stakeLocked}>{stakeLocked ? "Tokens locked · Earning 40% APY" : `Lock ${stakeTokens.toLocaleString()} B200-H`} {!stakeLocked && <Arrow />}</button>
+          {invalidStake && !stakeLocked ? <p className="stake-warning">Enter an amount up to your 10,240 B200-H available balance.</p> : <p className="checkout-note"><CheckIcon /> Locked tokens cannot be traded or redeemed until the selected term ends.</p>}
+        </aside>
+      </section>
+      <section className="section-block token-position"><div><p className="eyebrow">YOUR POSITION</p><h2>12,400 B200 Hour Tokens</h2><span>Average cost $2.91 · Unrealized P&L <strong>+$3,224</strong></span></div><div className="position-actions"><div><small>Available to trade</small><strong>{availableToTrade.toLocaleString()}h</strong></div><div><small>Committed to redemption</small><strong>2,160h</strong></div><div><small>Staked for revenue</small><strong>{stakedBalance.toLocaleString()}h</strong></div></div></section>
     </>
   );
 }

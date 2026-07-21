@@ -633,11 +633,48 @@ td strong { color: #27364e; }
 .trade-button { width: 100%; margin-top: 9px; color: white; }
 .trade-button.buy { background: #09866d; }
 .trade-button.sell { background: #c14b5d; }
+.stake-vault { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(310px, .65fr); gap: 28px; margin-top: 18px; padding: 24px; overflow: hidden; background: linear-gradient(135deg, #fbf9ff 0%, #fff 48%, #f5fcfa 100%); border-color: #ded5ec; }
+.stake-story { min-width: 0; }
+.stake-story .block-heading { margin-bottom: 12px; }
+.stake-apy-pill { padding: 7px 11px; color: white; background: linear-gradient(135deg, #7440b4, #05836d); border-radius: 999px; box-shadow: 0 8px 18px rgba(98, 52, 157, .16); font-size: 10px; font-weight: 900; letter-spacing: .02em; }
+.stake-lead { max-width: 670px; margin: 0; color: #687589; font-size: 10px; line-height: 1.65; }
+.stake-economics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 20px; }
+.stake-economics > div { min-height: 104px; padding: 15px; background: rgba(255,255,255,.82); border: 1px solid #e6e3eb; border-radius: 10px; }
+.stake-economics small, .stake-economics strong, .stake-economics span { display: block; }
+.stake-economics small { color: #938d9c; font-size: 7.5px; font-weight: 800; letter-spacing: .07em; }
+.stake-economics strong { margin: 10px 0 5px; color: #3e2b52; font-size: 17px; }
+.stake-economics span { color: #8a94a3; font-size: 8px; line-height: 1.4; }
+.stake-economics > div:first-child strong { color: #6a2cad; font-size: 23px; }
+.stake-flow { display: flex; align-items: center; gap: 9px; margin-top: 16px; color: #6d788a; font-size: 8.5px; font-weight: 750; }
+.stake-flow span { padding: 7px 9px; background: rgba(255,255,255,.76); border: 1px solid #e4e6eb; border-radius: 7px; }
+.stake-flow .arrow { color: #9b7cbc; }
+.stake-ticket { padding: 18px; background: white; border: 1px solid #ded8e8; border-radius: 12px; box-shadow: 0 12px 30px rgba(56, 38, 76, .08); }
+.stake-ticket-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.stake-ticket-head h3 { margin: 4px 0 0; color: #30394a; font-size: 13px; }
+.stake-status { padding: 5px 8px; color: #7b6c8e; background: #f2edf8; border-radius: 999px; font-size: 8px; font-weight: 800; }
+.stake-status.active { color: #08745d; background: #e7f7f1; }
+.stake-ticket > label { margin-top: 15px; }
+.stake-ticket input:disabled { color: #536171; background: #f4f6f7; opacity: 1; }
+.stake-quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 7px; }
+.stake-quick button { padding: 6px; color: #7e6b93; background: #f5f1f9; border: 0; border-radius: 6px; font-size: 8px; font-weight: 750; }
+.stake-quick button:disabled, .stake-term button:disabled { cursor: default; opacity: .55; }
+.stake-term { margin-top: 14px; }
+.stake-term > span { display: block; margin-bottom: 7px; color: #6e798b; font-size: 9px; font-weight: 750; }
+.stake-term > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.stake-term button { padding: 7px 5px; color: #7d8797; background: white; border: 1px solid #dfe3e8; border-radius: 7px; font-size: 8.5px; }
+.stake-term button.active { color: #6632a2; background: #f3ebfb; border-color: #cdb4e6; font-weight: 800; }
+.stake-summary { margin-top: 14px; padding: 9px 0; border-top: 1px solid #e9edf2; }
+.stake-summary > div { display: flex; align-items: center; justify-content: space-between; gap: 15px; min-height: 24px; color: #8791a1; font-size: 8.5px; }
+.stake-summary strong { color: #344052; font-size: 9.5px; }
+.stake-button { width: 100%; margin-top: 9px; color: white; background: linear-gradient(135deg, #7040ad, #087b69); }
+.stake-button:disabled { color: #7b8793; background: #e8ecee; }
+.stake-warning { margin: 8px 0 0; color: #b34b5b; font-size: 8px; line-height: 1.45; }
+.stake-vault.is-locked { border-color: #badfd4; box-shadow: inset 3px 0 0 #0b8069; }
 .token-position { display: flex; align-items: center; justify-content: space-between; gap: 30px; margin-top: 18px; padding: 20px 23px; }
 .token-position h2 { margin-bottom: 5px; }
 .token-position div:first-child > span { color: #798698; font-size: 10px; }
 .token-position div:first-child > span strong { color: #08745d; }
-.position-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; }
+.position-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; }
 .position-actions small, .position-actions strong { display: block; }
 .position-actions small { margin-bottom: 5px; color: #8e99a8; font-size: 8.5px; }
 .position-actions strong { color: #303a4d; font-size: 14px; }
@@ -650,6 +687,7 @@ td strong { color: #27364e; }
   .gpu-specs { grid-column: 1 / -1; }
   .market-layout { grid-template-columns: minmax(0, 1fr) 260px; }
   .trade-ticket { grid-column: 1 / -1; }
+  .stake-vault { grid-template-columns: minmax(0, 1fr) 300px; }
   .market-header { grid-template-columns: 1.5fr repeat(3, .6fr); }
   .market-header .button { grid-column: 1 / -1; justify-self: start; }
 }
@@ -663,6 +701,7 @@ td strong { color: #27364e; }
   .allocation-flow > .arrow { transform: rotate(90deg); justify-self: center; }
   .market-layout { grid-template-columns: 1fr; }
   .trade-ticket { grid-column: auto; }
+  .stake-vault { grid-template-columns: 1fr; }
   .market-header { grid-template-columns: repeat(3, 1fr); }
   .market-pair { grid-column: 1 / -1; }
 }
@@ -684,6 +723,9 @@ td strong { color: #27364e; }
   .contract-card-head, .auction-title, .token-position { align-items: flex-start; flex-direction: column; }
   .contract-meta { grid-template-columns: 1fr; }
   .transfer-mode-tabs, .two-field, .position-actions { grid-template-columns: 1fr; }
+  .stake-economics { grid-template-columns: 1fr; }
+  .stake-flow { align-items: stretch; flex-direction: column; }
+  .stake-flow .arrow { align-self: center; transform: rotate(90deg); }
   .auction-metrics > div:not(:last-child) { border-right: 0; border-bottom: 1px solid #e6eaf0; }
   .market-pair { grid-column: auto; }
   .market-header .button { grid-column: auto; }
