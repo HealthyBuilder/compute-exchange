@@ -253,7 +253,7 @@ function BuyerDashboard({ onNavigate }: { onNavigate: (view: BuyerView) => void 
   ];
   return (
     <>
-      <SectionTitle eyebrow="BUYER WORKSPACE" title="Buy, trade, hedge compute in one hub" body="Deploy GPUs, manage contract time, participate in new token issuance, or hedge token inventory from one buyer workspace." action={<button className="button primary" onClick={() => onNavigate("compute")}>Buy Compute <Arrow /></button>} />
+      <SectionTitle eyebrow="BUYER WORKSPACE" title="Buy, trade, hedge compute in one hub" body="Deploy GPUs, manage contract time, participate in new compute token auction, or hedge compute inventory in one workspace." action={<button className="button primary" onClick={() => onNavigate("compute")}>Buy Compute <Arrow /></button>} />
       <section className="buyer-balance-strip">
         <div><span>Available balance</span><strong>$248,600</strong><small>USD + USDC</small></div>
         <div><span>Compute Tokens</span><strong>12,400h</strong><small>10,240h uncommitted</small></div>

@@ -46,6 +46,8 @@ test("includes all buyer workflows and settlement rails", async () => {
   assert.match(page, /function TokenMarket/);
   assert.match(page, /BUYER WORKSPACE/);
   assert.match(page, /Buy, trade, hedge compute in one hub/);
+  assert.match(page, /Deploy GPUs, manage contract time, participate in new compute token auction, or hedge compute inventory in one workspace\./);
+  assert.doesNotMatch(page, /participate in new token issuance, or hedge token inventory from one buyer workspace/);
   assert.match(page, /Bid on Compute Token Auction/);
   assert.match(page, /Trade & Hedge/);
   assert.match(page, /Compute Auctions/);
