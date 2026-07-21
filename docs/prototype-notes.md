@@ -10,7 +10,7 @@ This is a product demo with switchable Supplier and Buyer workspaces. Payments, 
 - **Buy Compute** follows an AI-lab cluster workflow: select GPU inventory, configure count, region, term, storage, and environment, then settle in USD, USDC, or eligible Compute Tokens.
 - **Contracts & Transfer** starts from owned contracts and time-to-expiry. Buyers may share a portion of capacity as a sublease or assign the full remaining term.
 - **Compute Auctions** separates total minted supply, actual sold supply, clearing price, and the buyer's final allocation.
-- **Compute Trading** presents a live line chart, compact bid/ask order book, buy/sell ticket, and current token position. Tokens remain redeemable for eligible GPU compute.
+- **Compute Market** presents a live line chart, compact bid/ask order book, buy/sell ticket, and current token position. Tokens remain redeemable for eligible GPU compute.
 
 ## Product decisions
 

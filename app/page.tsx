@@ -41,7 +41,7 @@ const buyerNavigation: { id: BuyerView; label: string; short: string }[] = [
   { id: "compute", label: "Buy Compute", short: "C" },
   { id: "contracts", label: "Contracts & Transfer", short: "R" },
   { id: "auctions", label: "Compute Auctions", short: "A" },
-  { id: "market", label: "Compute Trading", short: "M" },
+  { id: "market", label: "Compute Market", short: "M" },
 ];
 
 function Arrow() {
@@ -248,8 +248,8 @@ function BuyerDashboard({ onNavigate }: { onNavigate: (view: BuyerView) => void 
   const routes: { id: BuyerView; label: string; title: string; body: string; meta: string; tone: string }[] = [
     { id: "compute", label: "DIRECT PURCHASE", title: "Deploy compute now", body: "Choose a verified GPU cluster and start a workload with USD, USDC, or Compute Tokens.", meta: "42 clusters available", tone: "blue" },
     { id: "contracts", label: "SECONDARY TRANSFER", title: "Use, share, or transfer", body: "See the time left on every contract. Sublease spare GPUs or transfer the remaining term.", meta: "2 active contracts", tone: "teal" },
-    { id: "auctions", label: "PRIMARY AUCTIONS", title: "Bid on Compute Token Auction", body: "Join supplier auctions and track minted supply, clearing price, and your final allocation.", meta: "1 auction clearing today", tone: "violet" },
-    { id: "market", label: "TOKEN MARKET", title: "Trade & Hedge", body: "Trade Compute Tokens on the order book or hedge the price of future GPU demand.", meta: "$1.8M 24h volume", tone: "cyan" },
+    { id: "auctions", label: "COMPUTE AUCTIONS", title: "Bid on Compute Token Auction", body: "Join supplier auctions and track minted supply, clearing price, and your final allocation.", meta: "1 auction clearing today", tone: "violet" },
+    { id: "market", label: "COMPUTE MARKET", title: "Trade & Hedge", body: "Trade Compute Tokens on the order book or hedge the price of future GPU demand.", meta: "$1.8M 24h volume", tone: "cyan" },
   ];
   return (
     <>
@@ -369,7 +369,7 @@ function ContractTransfer({ mode, setMode, selectedContract, setSelectedContract
 function TokenAuctions({ bidHours, setBidHours, bidPrice, setBidPrice, submitted, onSubmit }: { bidHours: string; setBidHours: (value: string) => void; bidPrice: string; setBidPrice: (value: string) => void; submitted: boolean; onSubmit: () => void }) {
   return (
     <>
-      <SectionTitle eyebrow="PRIMARY TOKEN AUCTIONS" title="Bid on newly tokenized GPU supply" body="Suppliers mint tokens against verified GPU capacity. You set a maximum price; clearing determines how many tokens you actually receive." />
+      <SectionTitle eyebrow="COMPUTE AUCTIONS" title="Bid on newly tokenized GPU supply" body="Suppliers mint tokens against verified GPU capacity. You set a maximum price; clearing determines how many tokens you actually receive." />
       <div className="auction-layout">
         <section className="section-block live-auction">
           <div className="auction-title"><div><span className="live-auction-pill"><i className="live-dot" /> LIVE</span><h2>B200 Hour Token · Batch 012</h2><p>Backed by 64 NVIDIA B200 GPUs · Singapore · Aug–Sep 2026</p></div><div className="auction-clock"><small>CLEARING IN</small><strong>02:14:09</strong></div></div>
@@ -502,7 +502,7 @@ function TokenMarket({ side, setSide, amount, setAmount, onToast }: { side: "buy
   const bids = [["3.16", "5,200", "16,432"], ["3.14", "3,600", "11,304"], ["3.12", "9,480", "29,578"], ["3.09", "2,100", "6,489"]];
   return (
     <>
-      <SectionTitle eyebrow="SECONDARY TOKEN MARKET" title="Trade B200 Compute Tokens" body="Buy tokenized GPU hours before you need them, sell surplus inventory, or hold tokens for future compute redemption." />
+      <SectionTitle eyebrow="COMPUTE MARKET" title="Trade B200 Compute Tokens" body="Buy tokenized GPU hours before you need them, sell surplus inventory, or hold tokens for future compute redemption." />
       <section className="market-header section-block"><div className="market-pair"><span className="token-symbol">B2</span><div><strong>B200 Hour Token / USDC</strong><small>B200-HOUR · Redeemable compute</small></div></div><div className="market-stat positive"><span>Last price</span><strong>$3.17</strong><small>+4.28% today</small></div><div className="market-stat"><span>24h high</span><strong>$3.31</strong><small>Low $2.98</small></div><div className="market-stat"><span>24h volume</span><strong>$1.84M</strong><small>586,200 tokens</small></div><button className="button small" onClick={() => onToast("Redemption opened", "Your token balance is ready to configure as a B200 cluster.")}>Redeem for compute <Arrow /></button></section>
       <div className="market-layout">
         <section className="section-block market-chart-card">

@@ -49,9 +49,12 @@ test("includes all buyer workflows and settlement rails", async () => {
   assert.match(page, /Bid on Compute Token Auction/);
   assert.match(page, /Trade & Hedge/);
   assert.match(page, /Compute Auctions/);
-  assert.match(page, /Compute Trading/);
+  assert.match(page, /Compute Market/);
   assert.match(page, /function TokenPriceChart/);
   assert.doesNotMatch(page, /chart-bars/);
+  assert.doesNotMatch(page, /buyer-route-index/);
+  assert.doesNotMatch(page, /PRIMARY AUCTIONS/);
+  assert.doesNotMatch(page, /TOKEN MARKET/);
   assert.match(page, /YOUR FINAL ALLOCATION/);
   assert.match(page, /Share capacity/);
   assert.match(page, /Transfer contract/);
