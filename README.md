@@ -1,8 +1,8 @@
-# vinext-starter
+# Compute Exchange Demo
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+A Supplier-side B200 capacity marketplace demo. Its Tokenized Compute approval
+can issue the global B200H token on Solana Devnet through a platform-controlled
+server signer; all other market interactions are presentation-only.
 
 ## Prerequisites
 
@@ -12,7 +12,7 @@ Drizzle support.
 
 ```bash
 npm install
-npm run dev
+npm run dev:node
 npm run build
 ```
 
@@ -87,8 +87,11 @@ actions tied to the current ChatGPT user. Leave public content anonymous.
 
 ## Useful Commands
 
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
+- `npm run dev:node`: start the local Node demo at `http://localhost:3001`; use this for real Devnet issuance.
+- `npm run build:node`: create the Node build intended for an AWS deployment.
+- `npm run start:node`: serve that Node build.
+- `npm run dev`: start the legacy Worker/UI preview. It is useful for layout work, but Solana's public Devnet RPC rejects the Worker egress path.
+- `npm run build`: verify the Worker build output used by the existing render test.
 - `npm test`: build the starter and verify its rendered loading skeleton
 - `npm run db:generate`: generate Drizzle migrations after schema changes
 

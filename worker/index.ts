@@ -4,6 +4,10 @@ import handler from "vinext/server/app-router-entry";
 
 interface Env {
   ASSETS: Fetcher;
+  B200H_ISSUER_PRIVATE_KEY?: string;
+  B200H_MINT_ADDRESS?: string;
+  SOLANA_DEVNET_RPC_URL?: string;
+  SOLANA_DEVNET_WS_URL?: string;
   DB: D1Database;
   IMAGES: {
     input(stream: ReadableStream): {
@@ -27,6 +31,7 @@ interface ExecutionContext {
 
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    exposeServerRuntimeConfig(env);
     const url = new URL(request.url);
 
     if (url.pathname === "/_vinext/image") {
@@ -45,3 +50,20 @@ const worker = {
 };
 
 export default worker;
+
+function exposeServerRuntimeConfig(env: Env) {
+  const serverEnvironment = process.env as Record<string, string | undefined>;
+  const keys = [
+    "B200H_ISSUER_PRIVATE_KEY",
+    "B200H_MINT_ADDRESS",
+    "SOLANA_DEVNET_RPC_URL",
+    "SOLANA_DEVNET_WS_URL",
+  ] as const;
+
+  for (const key of keys) {
+    const value = env[key];
+    if (typeof value === "string") {
+      serverEnvironment[key] = value;
+    }
+  }
+}

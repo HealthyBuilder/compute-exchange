@@ -13,6 +13,21 @@ type Toast = {
   detail: string;
 } | null;
 
+type DevnetReceipt = {
+  amount: number;
+  explorerUrl: string;
+  inventoryOwner: string;
+  mintAddress: string;
+  network: "devnet";
+  signature: string;
+};
+
+type TokenIssuance =
+  | { status: "idle" }
+  | { status: "issuing" }
+  | { status: "confirmed"; receipt: DevnetReceipt }
+  | { status: "failed"; message: string };
+
 const navigation: { id: View; label: string; short: string }[] = [
   { id: "overview", label: "Overview", short: "O" },
   { id: "exchange", label: "Exchange", short: "E" },
@@ -41,7 +56,7 @@ function SparkIcon() {
 }
 
 export default function Home() {
-  const [role, setRole] = useState<Role>("buyer");
+  const [role, setRole] = useState<Role>("supplier");
   const [view, setView] = useState<View>("overview");
   const [buyerView, setBuyerView] = useState<BuyerView>("dashboard");
   const [toast, setToast] = useState<Toast>(null);
@@ -52,6 +67,7 @@ export default function Home() {
   const [leaseVerification, setLeaseVerification] = useState<"idle" | "running" | "complete">("idle");
   const [tokenAmount, setTokenAmount] = useState("48,000");
   const [leaseLength, setLeaseLength] = useState("30 days");
+  const [tokenIssuance, setTokenIssuance] = useState<TokenIssuance>({ status: "idle" });
 
   const activeLabel = useMemo(
     () => role === "buyer"
@@ -85,13 +101,49 @@ export default function Home() {
     }, 1100);
   };
 
+  const issueTokenBatch = async () => {
+    const hours = Number(tokenAmount.replaceAll(",", "").trim());
+
+    if (!Number.isInteger(hours) || hours < 1) {
+      const message = "Enter a whole number of B200 hours before approving issuance.";
+      setTokenIssuance({ status: "failed", message });
+      showToast("Check the token hours", message);
+      return;
+    }
+
+    setTokenIssuance({ status: "issuing" });
+
+    try {
+      const response = await fetch("/api/tokenized-compute/issue", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          hours,
+          idempotencyKey: crypto.randomUUID(),
+        }),
+      });
+      const payload = await response.json() as DevnetReceipt & { error?: string };
+
+      if (!response.ok || payload.error) {
+        throw new Error(payload.error || "The Devnet issuance could not be completed.");
+      }
+
+      setTokenIssuance({ status: "confirmed", receipt: payload });
+      showToast("B200H issued on Devnet", `${payload.amount.toLocaleString()} B200 Hour Tokens are now in Compute Exchange inventory.`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "The Devnet issuance could not be completed.";
+      setTokenIssuance({ status: "failed", message });
+      showToast("Devnet issuance could not complete", message);
+    }
+  };
+
   return (
     <main className="app-shell">
       <aside className="sidebar" aria-label={`${role === "buyer" ? "Buyer" : "Supplier"} navigation`}>
         <button className="brand" onClick={() => role === "buyer" ? setBuyerView("dashboard") : openView("overview")} aria-label="Go to overview">
-          <span className="brand-mark">CF</span>
+          <span className="brand-mark">CE</span>
           <span className="brand-copy">
-            <strong>Compute Future</strong>
+            <strong>Compute Exchange</strong>
             <small>{role === "buyer" ? "Buyer Workspace" : "Supplier Console"}</small>
           </span>
         </button>
@@ -144,7 +196,7 @@ export default function Home() {
           {role === "buyer" ? <BuyerWorkspace view={buyerView} onNavigate={setBuyerView} onToast={showToast} /> : <>
             {view === "overview" && <Overview onNavigate={openView} onToast={showToast} />}
             {view === "exchange" && <Exchange onNavigate={openView} />}
-            {view === "tokens" && <Tokens step={tokenStep} setStep={setTokenStep} verification={tokenVerification} onRunVerification={() => runVerification("token")} amount={tokenAmount} setAmount={setTokenAmount} onToast={showToast} />}
+            {view === "tokens" && <Tokens step={tokenStep} setStep={setTokenStep} verification={tokenVerification} onRunVerification={() => runVerification("token")} amount={tokenAmount} setAmount={(value) => { setTokenAmount(value); setTokenIssuance({ status: "idle" }); }} issuance={tokenIssuance} onIssue={issueTokenBatch} onToast={showToast} />}
             {view === "leases" && <Leases step={leaseStep} setStep={setLeaseStep} verification={leaseVerification} onRunVerification={() => runVerification("lease")} length={leaseLength} setLength={setLeaseLength} subleaseEnabled={subleaseEnabled} setSubleaseEnabled={setSubleaseEnabled} onToast={showToast} />}
           </>}
         </div>
@@ -552,36 +604,55 @@ function WorkflowVerification({ workflow, title, body, steps, step, setStep, ver
   );
 }
 
-function PublishReview({ workflow, title, body, steps, step, setStep, amount, length, subleaseEnabled, onToast }: { workflow: Workflow; title: string; body: string; steps: string[]; step: WorkflowStep; setStep: (step: WorkflowStep) => void; amount?: string; length?: string; subleaseEnabled?: boolean; onToast: (title: string, detail: string) => void }) {
+function PublishReview({ workflow, title, body, steps, step, setStep, amount, length, subleaseEnabled, issuance, onIssue, onToast }: { workflow: Workflow; title: string; body: string; steps: string[]; step: WorkflowStep; setStep: (step: WorkflowStep) => void; amount?: string; length?: string; subleaseEnabled?: boolean; issuance?: TokenIssuance; onIssue?: () => void; onToast: (title: string, detail: string) => void }) {
   const isToken = workflow === "token";
+  const tokenIssued = issuance?.status === "confirmed";
+  const issuing = issuance?.status === "issuing";
   return (
     <>
       <SectionTitle eyebrow={`${isToken ? "TOKENIZED COMPUTE" : "LEASE COMPUTE"} · STEP 4 OF 4`} title={title} body={body} />
       <FlowStepper workflow={workflow} steps={steps} step={step} setStep={setStep} />
       <div className="workflow-layout">
         <section className="section-block publish-review">
-          <div className="block-heading compact-heading"><div><p className="eyebrow">FINAL REVIEW</p><h2>{isToken ? "B200 Hour Token batch" : "Dedicated B200 lease"}</h2></div><span className={isToken ? "draft-pill" : "teal-pill"}>{isToken ? "Auction ready" : "Buyer ready"}</span></div>
+          <div className="block-heading compact-heading"><div><p className="eyebrow">FINAL REVIEW</p><h2>{isToken ? "B200 Hour Token batch" : "Dedicated B200 lease"}</h2></div><span className={isToken ? tokenIssued ? "verified-pill" : "draft-pill" : "teal-pill"}>{isToken ? tokenIssued ? "Issued on Devnet" : "Ready to issue" : "Buyer ready"}</span></div>
           <div className="review-lines">
             <div><span>Capacity</span><strong>{isToken ? "B200-SG-01 · 64 B200 GPUs" : "B200-SG-02 · 32 B200 GPUs"}</strong></div>
             <div><span>{isToken ? "Token hours" : "Lease term"}</span><strong>{isToken ? `${amount} B200 GPU hours` : length}</strong></div>
             <div><span>{isToken ? "Commercial model" : "Payment"}</span><strong>{isToken ? "Auction revenue + trading fees" : "Direct USD / USDC contract"}</strong></div>
             <div><span>{isToken ? "Buyer use" : "Sublease"}</span><strong>{isToken ? "Redeem eligible B200 compute" : subleaseEnabled ? "Allowed for approved buyers" : "Not allowed"}</strong></div>
           </div>
-          <div className="workflow-actions"><button className={isToken ? "button primary" : "button dark"} onClick={() => onToast(isToken ? "Token batch published" : "Lease published", isToken ? "Your B200 Hour Token batch is now open for auction." : "Your direct B200 lease is now available to approved buyers.")}>{isToken ? "Publish to auction" : "Publish lease"} <Arrow /></button><button className="text-button" onClick={() => setStep(3)}>Edit terms <Arrow /></button></div>
+          {isToken && <div className="approval-note"><CheckIcon /><span>Approval records these verified hours on Solana Devnet. Compute Exchange signs the issuance; no supplier wallet is required.</span></div>}
+          {isToken && issuance?.status === "failed" && <div className="issuance-error"><strong>Issuance needs attention</strong><span>{issuance.message}</span></div>}
+          {isToken && tokenIssued && <DevnetReceiptCard receipt={issuance.receipt} />}
+          <div className="workflow-actions"><button className={isToken ? "button primary" : "button dark"} disabled={isToken && (issuing || tokenIssued)} onClick={() => isToken ? onIssue?.() : onToast("Lease published", "Your direct B200 lease is now available to approved buyers.")}>{isToken ? tokenIssued ? "Issued on Devnet" : issuing ? "Issuing on Devnet…" : "Approve & issue B200H" : "Publish lease"} {!tokenIssued && !issuing && <Arrow />}</button><button className="text-button" onClick={() => setStep(3)}>Edit terms <Arrow /></button></div>
         </section>
         <aside className="section-block workflow-aside publish-aside">
-          <p className="eyebrow">AFTER YOU PUBLISH</p><h2>{isToken ? "Auction first, trading next." : "Buyers can review the offer."}</h2>
-          <div className="workflow-callout"><span>01</span><div><strong>{isToken ? "Earn auction revenue" : "Receive direct payment"}</strong><p>{isToken ? "Your token batch goes live for eligible buyers." : "A buyer can agree to the clear contract terms."}</p></div></div>
-          <div className="workflow-callout"><span>02</span><div><strong>{isToken ? "Earn trading fees" : "Track delivery"}</strong><p>{isToken ? "Earn fees from trading volume after the auction." : "Monitor the contract and delivery from the same console."}</p></div></div>
+          <p className="eyebrow">{isToken ? "AFTER ISSUANCE" : "AFTER YOU PUBLISH"}</p><h2>{isToken ? "A clear record, then an auction." : "Buyers can review the offer."}</h2>
+          <div className="workflow-callout"><span>01</span><div><strong>{isToken ? "On-chain issuance receipt" : "Receive direct payment"}</strong><p>{isToken ? "The Devnet transaction records the B200H supply in Compute Exchange inventory." : "A buyer can agree to the clear contract terms."}</p></div></div>
+          <div className="workflow-callout"><span>02</span><div><strong>{isToken ? "Auction revenue and trading fees" : "Track delivery"}</strong><p>{isToken ? "The batch can then be prepared for an auction without adding a wallet step for your team." : "Monitor the contract and delivery from the same console."}</p></div></div>
         </aside>
       </div>
     </>
   );
 }
 
-function Tokens({ step, setStep, verification, onRunVerification, amount, setAmount, onToast }: { step: WorkflowStep; setStep: (step: WorkflowStep) => void; verification: "idle" | "running" | "complete"; onRunVerification: () => void; amount: string; setAmount: (value: string) => void; onToast: (title: string, detail: string) => void }) {
-  const steps = ["Select capacity", "Verify capacity", "Set sale terms", "Publish"];
-  const body = step === 1 ? "Start by selecting the B200 capacity you want to tokenize." : step === 2 ? "Verify this capacity before it becomes standard B200 Hour Tokens." : step === 3 ? "Set a simple auction offer and show how trading fees are earned." : "Review the batch before it goes to auction.";
+function DevnetReceiptCard({ receipt }: { receipt: DevnetReceipt }) {
+  return <section className="devnet-receipt" aria-label="Solana Devnet issuance receipt">
+    <div className="devnet-receipt-head"><span className="devnet-status"><i className="live-dot" /> Confirmed on Solana Devnet</span><span className="devnet-token">B200H</span></div>
+    <strong>{receipt.amount.toLocaleString()} B200H issued</strong>
+    <p>Issued to Compute Exchange inventory. The supplier approval is complete; no wallet action was required.</p>
+    <div className="devnet-receipt-meta"><span>Mint <code>{shortAddress(receipt.mintAddress)}</code></span><span>Transaction <code>{shortAddress(receipt.signature)}</code></span></div>
+    <a href={receipt.explorerUrl} target="_blank" rel="noreferrer">View Devnet proof <Arrow /></a>
+  </section>;
+}
+
+function shortAddress(value: string) {
+  return value.length > 16 ? `${value.slice(0, 7)}…${value.slice(-7)}` : value;
+}
+
+function Tokens({ step, setStep, verification, onRunVerification, amount, setAmount, issuance, onIssue, onToast }: { step: WorkflowStep; setStep: (step: WorkflowStep) => void; verification: "idle" | "running" | "complete"; onRunVerification: () => void; amount: string; setAmount: (value: string) => void; issuance: TokenIssuance; onIssue: () => void; onToast: (title: string, detail: string) => void }) {
+  const steps = ["Select capacity", "Verify capacity", "Set sale terms", "Approve issuance"];
+  const body = step === 1 ? "Start by selecting the B200 capacity you want to tokenize." : step === 2 ? "Verify this capacity before it becomes standard B200 Hour Tokens." : step === 3 ? "Set a simple auction offer and show how trading fees are earned." : "Review the batch, then approve its Devnet issuance.";
   if (step === 1) {
     return <WorkflowSelection workflow="token" title="Select B200 capacity." body={body} steps={steps} step={step} setStep={setStep} onToast={onToast} />;
   }
@@ -589,11 +660,11 @@ function Tokens({ step, setStep, verification, onRunVerification, amount, setAmo
     return <WorkflowVerification workflow="token" title="Verify capacity for Tokenized Compute." body={body} steps={steps} step={step} setStep={setStep} verification={verification} onRun={onRunVerification} />;
   }
   if (step === 4) {
-    return <PublishReview workflow="token" title="Review your token batch." body="Everything is ready for a final review before the auction opens." steps={steps} step={step} setStep={setStep} amount={amount} onToast={onToast} />;
+    return <PublishReview workflow="token" title="Review and approve issuance." body="Compute Exchange will issue the selected verified B200 hours to its Devnet inventory. You do not need a wallet." steps={steps} step={step} setStep={setStep} amount={amount} issuance={issuance} onIssue={onIssue} onToast={onToast} />;
   }
   return (
     <>
-      <SectionTitle eyebrow="TOKENIZED COMPUTE · STEP 3 OF 4" title="Set your sale terms." body={body} action={<button className="button primary" onClick={() => setStep(4)}>Review & publish <Arrow /></button>} />
+      <SectionTitle eyebrow="TOKENIZED COMPUTE · STEP 3 OF 4" title="Set your sale terms." body={body} action={<button className="button primary" onClick={() => setStep(4)}>Review issuance <Arrow /></button>} />
       <FlowStepper workflow="token" steps={steps} step={step} setStep={setStep} />
       <div className="issue-layout">
         <section className="section-block issue-form-card">

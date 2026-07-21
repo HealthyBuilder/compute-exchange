@@ -14,20 +14,20 @@ async function render() {
   );
 }
 
-test("server-renders the buyer command center", async () => {
+test("server-renders the supplier console by default", async () => {
   const response = await render();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>Compute Future · Compute Exchange<\/title>/i);
-  assert.match(html, /Buyer Workspace/);
-  assert.match(html, /Get the compute you need\. Keep every option open\./);
-  assert.match(html, /Deploy compute now/);
-  assert.match(html, /Use, share, or transfer/);
-  assert.match(html, /Bid on new token supply/);
-  assert.match(html, /Trade tokens instantly/);
-  assert.match(html, /Switch to.*Supplier/);
+  assert.match(html, /<title>Compute Exchange<\/title>/i);
+  assert.match(html, /Supplier Console/);
+  assert.match(html, /Northstar Data/);
+  assert.match(html, /Verified supplier/);
+  assert.match(html, /Your B200 capacity is ready to reach buyers\./);
+  assert.match(html, /Tokenized Compute/);
+  assert.match(html, /Lease Compute/);
+  assert.match(html, /Switch to buyer workspace/);
 });
 
 test("includes all buyer workflows and settlement rails", async () => {
@@ -45,7 +45,9 @@ test("includes all buyer workflows and settlement rails", async () => {
   assert.match(page, /YOUR FINAL ALLOCATION/);
   assert.match(page, /Share capacity/);
   assert.match(page, /Transfer contract/);
-  assert.match(layout, /Compute Future · Compute Exchange/);
+  assert.match(page, /Approve & issue B200H/);
+  assert.match(page, /Confirmed on Solana Devnet/);
+  assert.match(layout, /Compute Exchange/);
   assert.match(css, /\.payment-rails/);
   assert.match(css, /\.allocation-flow/);
   assert.match(css, /\.order-book/);

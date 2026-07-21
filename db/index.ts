@@ -1,13 +1,17 @@
-import { env } from "cloudflare:workers";
-import { drizzle } from "drizzle-orm/d1";
+import { drizzle, type AnyD1Database } from "drizzle-orm/d1";
 import * as schema from "./schema";
 
-export function getDb() {
-  if (!env.DB) {
+/**
+ * The demo's live issuance runs in Node, while an optional D1 adapter remains
+ * available for a future Worker deployment. The caller supplies the binding so
+ * this shared module does not import a Worker-only runtime module.
+ */
+export function getDb(database?: AnyD1Database) {
+  if (!database) {
     throw new Error(
-      "Cloudflare D1 binding `DB` is unavailable. Set the `d1` field in .openai/hosting.json to `DB` or let your control plane inject the real binding values before using the database."
+      "A D1 database binding is required before using the optional database adapter."
     );
   }
 
-  return drizzle(env.DB, { schema });
+  return drizzle(database, { schema });
 }
