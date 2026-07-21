@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type View = "overview" | "revenue" | "exchange" | "tokens" | "leases";
 type BuyerView = "dashboard" | "compute" | "contracts" | "auctions" | "market";
@@ -40,8 +40,8 @@ const buyerNavigation: { id: BuyerView; label: string; short: string }[] = [
   { id: "dashboard", label: "Dashboard", short: "D" },
   { id: "compute", label: "Buy Compute", short: "C" },
   { id: "contracts", label: "Contracts & Transfer", short: "R" },
-  { id: "auctions", label: "Token Auctions", short: "A" },
-  { id: "market", label: "Token Market", short: "M" },
+  { id: "auctions", label: "Compute Auctions", short: "A" },
+  { id: "market", label: "Compute Trading", short: "M" },
 ];
 
 function Arrow() {
@@ -245,15 +245,15 @@ function BuyerWorkspace({ view, onNavigate, onToast }: { view: BuyerView; onNavi
 }
 
 function BuyerDashboard({ onNavigate }: { onNavigate: (view: BuyerView) => void }) {
-  const routes: { id: BuyerView; index: string; label: string; title: string; body: string; meta: string; tone: string }[] = [
-    { id: "compute", index: "01", label: "DIRECT PURCHASE", title: "Deploy compute now", body: "Choose a verified GPU cluster and start a workload with USD, USDC, or Compute Tokens.", meta: "42 clusters available", tone: "blue" },
-    { id: "contracts", index: "02", label: "SECONDARY TRANSFER", title: "Use, share, or transfer", body: "See the time left on every contract. Sublease spare GPUs or transfer the remaining term.", meta: "2 active contracts", tone: "teal" },
-    { id: "auctions", index: "03", label: "PRIMARY AUCTIONS", title: "Bid on new token supply", body: "Join supplier auctions and track minted supply, clearing price, and your final allocation.", meta: "1 auction clearing today", tone: "violet" },
-    { id: "market", index: "04", label: "TOKEN MARKET", title: "Trade tokens instantly", body: "Buy or sell Compute Tokens against a live order book before you redeem them for GPU time.", meta: "$1.8M 24h volume", tone: "cyan" },
+  const routes: { id: BuyerView; label: string; title: string; body: string; meta: string; tone: string }[] = [
+    { id: "compute", label: "DIRECT PURCHASE", title: "Deploy compute now", body: "Choose a verified GPU cluster and start a workload with USD, USDC, or Compute Tokens.", meta: "42 clusters available", tone: "blue" },
+    { id: "contracts", label: "SECONDARY TRANSFER", title: "Use, share, or transfer", body: "See the time left on every contract. Sublease spare GPUs or transfer the remaining term.", meta: "2 active contracts", tone: "teal" },
+    { id: "auctions", label: "PRIMARY AUCTIONS", title: "Bid on Compute Token Auction", body: "Join supplier auctions and track minted supply, clearing price, and your final allocation.", meta: "1 auction clearing today", tone: "violet" },
+    { id: "market", label: "TOKEN MARKET", title: "Trade & Hedge", body: "Trade Compute Tokens on the order book or hedge the price of future GPU demand.", meta: "$1.8M 24h volume", tone: "cyan" },
   ];
   return (
     <>
-      <SectionTitle eyebrow="BUYER COMMAND CENTER" title="Get the compute you need. Keep every option open." body="Deploy GPUs, manage contract time, participate in new token issuance, or trade token inventory from one buyer workspace." action={<button className="button primary" onClick={() => onNavigate("compute")}>Deploy a cluster <Arrow /></button>} />
+      <SectionTitle eyebrow="BUYER WORKSPACE" title="Buy, trade, hedge compute in one hub" body="Deploy GPUs, manage contract time, participate in new token issuance, or hedge token inventory from one buyer workspace." action={<button className="button primary" onClick={() => onNavigate("compute")}>Buy Compute <Arrow /></button>} />
       <section className="buyer-balance-strip">
         <div><span>Available balance</span><strong>$248,600</strong><small>USD + USDC</small></div>
         <div><span>Compute Tokens</span><strong>12,400h</strong><small>10,240h uncommitted</small></div>
@@ -262,7 +262,7 @@ function BuyerDashboard({ onNavigate }: { onNavigate: (view: BuyerView) => void 
       </section>
       <section className="buyer-route-grid" aria-label="Buyer actions">
         {routes.map((route) => <button key={route.id} className={`buyer-route buyer-${route.tone}`} onClick={() => onNavigate(route.id)}>
-          <span className="buyer-route-index">{route.index}</span><span className="buyer-route-label">{route.label}</span>
+          <span className="buyer-route-label">{route.label}</span>
           <h2>{route.title}</h2><p>{route.body}</p><span className="buyer-route-meta"><i className="live-dot" /> {route.meta}</span><span className="buyer-route-link">Open <Arrow /></span>
         </button>)}
       </section>
@@ -392,7 +392,112 @@ function TokenAuctions({ bidHours, setBidHours, bidPrice, setBidPrice, submitted
   );
 }
 
+function TokenPriceChart({ timeframe }: { timeframe: string }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const series: Record<string, number[]> = {
+      "1H": [3.08, 3.10, 3.09, 3.12, 3.11, 3.14, 3.13, 3.15, 3.14, 3.18, 3.16, 3.17],
+      "1D": [2.98, 3.01, 3.00, 3.04, 3.02, 3.07, 3.05, 3.11, 3.09, 3.14, 3.12, 3.18, 3.15, 3.20, 3.18, 3.22, 3.19, 3.24, 3.21, 3.17],
+      "1W": [2.72, 2.76, 2.81, 2.78, 2.86, 2.91, 2.88, 2.96, 2.94, 3.03, 3.08, 3.04, 3.12, 3.09, 3.18, 3.14, 3.20, 3.17],
+      "1M": [2.42, 2.51, 2.48, 2.60, 2.57, 2.68, 2.73, 2.69, 2.82, 2.90, 2.86, 2.98, 3.04, 3.00, 3.12, 3.08, 3.21, 3.17],
+    };
+
+    const draw = () => {
+      const values = series[timeframe] ?? series["1D"];
+      const width = Math.max(canvas.clientWidth, 320);
+      const height = Math.max(canvas.clientHeight, 240);
+      const ratio = window.devicePixelRatio || 1;
+      canvas.width = width * ratio;
+      canvas.height = height * ratio;
+      const context = canvas.getContext("2d");
+      if (!context) return;
+      context.scale(ratio, ratio);
+      context.clearRect(0, 0, width, height);
+
+      const plot = { left: 18, right: width - 62, top: 18, bottom: height - 34 };
+      const min = Math.min(...values) - 0.04;
+      const max = Math.max(...values) + 0.04;
+      const x = (index: number) => plot.left + (index / (values.length - 1)) * (plot.right - plot.left);
+      const y = (value: number) => plot.bottom - ((value - min) / (max - min)) * (plot.bottom - plot.top);
+
+      context.lineWidth = 1;
+      context.strokeStyle = "rgba(159, 178, 187, .11)";
+      context.fillStyle = "#8792a4";
+      context.font = "10px Arial";
+      context.textAlign = "left";
+      for (let index = 0; index < 5; index += 1) {
+        const lineY = plot.top + index * ((plot.bottom - plot.top) / 4);
+        context.beginPath();
+        context.moveTo(plot.left, lineY);
+        context.lineTo(plot.right, lineY);
+        context.stroke();
+        const label = (max - index * ((max - min) / 4)).toFixed(2);
+        context.fillText(label, plot.right + 10, lineY + 3);
+      }
+      for (let index = 0; index < 6; index += 1) {
+        const lineX = plot.left + index * ((plot.right - plot.left) / 5);
+        context.beginPath();
+        context.moveTo(lineX, plot.top);
+        context.lineTo(lineX, plot.bottom);
+        context.stroke();
+      }
+
+      const fill = context.createLinearGradient(0, plot.top, 0, plot.bottom);
+      fill.addColorStop(0, "rgba(143, 91, 213, .22)");
+      fill.addColorStop(0.72, "rgba(139, 124, 255, .08)");
+      fill.addColorStop(1, "rgba(79, 214, 206, 0)");
+      context.beginPath();
+      values.forEach((value, index) => index === 0 ? context.moveTo(x(index), y(value)) : context.lineTo(x(index), y(value)));
+      context.lineTo(plot.right, plot.bottom);
+      context.lineTo(plot.left, plot.bottom);
+      context.closePath();
+      context.fillStyle = fill;
+      context.fill();
+
+      context.beginPath();
+      values.forEach((value, index) => index === 0 ? context.moveTo(x(index), y(value)) : context.lineTo(x(index), y(value)));
+      context.strokeStyle = "#7641b8";
+      context.lineWidth = 2;
+      context.lineJoin = "round";
+      context.stroke();
+
+      const lastX = x(values.length - 1);
+      const lastY = y(values[values.length - 1]);
+      context.setLineDash([4, 4]);
+      context.beginPath();
+      context.moveTo(plot.left, lastY);
+      context.lineTo(plot.right, lastY);
+      context.strokeStyle = "rgba(118, 65, 184, .45)";
+      context.lineWidth = 1;
+      context.stroke();
+      context.setLineDash([]);
+      context.beginPath();
+      context.arc(lastX, lastY, 4, 0, Math.PI * 2);
+      context.fillStyle = "#7641b8";
+      context.fill();
+
+      context.fillStyle = "#8792a4";
+      context.font = "10px Arial";
+      context.textAlign = "center";
+      ["09:00", "12:00", "15:00", "18:00", "21:00"].forEach((label, index) => {
+        const labelX = plot.left + index * ((plot.right - plot.left) / 4);
+        context.fillText(label, labelX, height - 12);
+      });
+    };
+
+    draw();
+    window.addEventListener("resize", draw);
+    return () => window.removeEventListener("resize", draw);
+  }, [timeframe]);
+
+  return <canvas ref={canvasRef} className="token-line-canvas" role="img" aria-label={`B200 Compute Token ${timeframe} price line chart`} />;
+}
+
 function TokenMarket({ side, setSide, amount, setAmount, onToast }: { side: "buy" | "sell"; setSide: (value: "buy" | "sell") => void; amount: string; setAmount: (value: string) => void; onToast: (title: string, detail: string) => void }) {
+  const [timeframe, setTimeframe] = useState("1D");
   const asks = [["3.24", "2,400", "7,776"], ["3.21", "4,850", "15,568"], ["3.19", "1,920", "6,125"], ["3.18", "8,400", "26,712"]];
   const bids = [["3.16", "5,200", "16,432"], ["3.14", "3,600", "11,304"], ["3.12", "9,480", "29,578"], ["3.09", "2,100", "6,489"]];
   return (
@@ -401,8 +506,8 @@ function TokenMarket({ side, setSide, amount, setAmount, onToast }: { side: "buy
       <section className="market-header section-block"><div className="market-pair"><span className="token-symbol">B2</span><div><strong>B200 Hour Token / USDC</strong><small>B200-HOUR · Redeemable compute</small></div></div><div className="market-stat positive"><span>Last price</span><strong>$3.17</strong><small>+4.28% today</small></div><div className="market-stat"><span>24h high</span><strong>$3.31</strong><small>Low $2.98</small></div><div className="market-stat"><span>24h volume</span><strong>$1.84M</strong><small>586,200 tokens</small></div><button className="button small" onClick={() => onToast("Redemption opened", "Your token balance is ready to configure as a B200 cluster.")}>Redeem for compute <Arrow /></button></section>
       <div className="market-layout">
         <section className="section-block market-chart-card">
-          <div className="chart-toolbar"><div><button className="active">Price</button><button>Depth</button></div><div><button>1H</button><button className="active">1D</button><button>1W</button><button>1M</button></div></div>
-          <div className="price-chart" aria-label="B200 Token price chart"><div className="chart-grid-lines" /><div className="chart-bars">{[34, 42, 38, 52, 48, 60, 57, 72, 66, 81, 76, 92, 86, 96, 89, 104, 96, 112, 108, 122, 116, 132, 128, 142].map((height, index) => <i key={index} style={{ height: `${height}px` }} />)}</div><span className="chart-price-tag">$3.17</span></div>
+          <div className="chart-toolbar"><div><button className="active">Price</button><button>Depth</button></div><div>{["1H", "1D", "1W", "1M"].map((period) => <button key={period} className={timeframe === period ? "active" : ""} onClick={() => setTimeframe(period)}>{period}</button>)}</div></div>
+          <div className="price-chart"><TokenPriceChart timeframe={timeframe} /><span className="chart-price-tag">$3.17</span></div>
           <div className="chart-axis"><span>Jul 09</span><span>Jul 11</span><span>Jul 13</span><span>Jul 15</span></div>
         </section>
         <section className="section-block order-book">
@@ -413,7 +518,7 @@ function TokenMarket({ side, setSide, amount, setAmount, onToast }: { side: "buy
           <div className="trade-side-tabs"><button className={side === "buy" ? "buy active" : ""} onClick={() => setSide("buy")}>Buy</button><button className={side === "sell" ? "sell active" : ""} onClick={() => setSide("sell")}>Sell</button></div>
           <div className="order-type-tabs"><button className="active">Limit</button><button>Market</button></div>
           <label>Limit price<div className="input-suffix"><input defaultValue="3.17" /><span>USDC</span></div></label><label>Amount<div className="input-suffix"><input value={amount} onChange={(event) => setAmount(event.target.value)} /><span>B200-H</span></div></label>
-          <div className="quick-percent"><button>25%</button><button>50%</button><button>75%</button><button>Max</button></div>
+          <div className="quick-percent"><button onClick={() => setAmount("500")}>25%</button><button onClick={() => setAmount("1,000")}>50%</button><button onClick={() => setAmount("1,500")}>75%</button><button onClick={() => setAmount(side === "sell" ? "10,240" : "2,000")}>Max</button></div>
           <div className="trade-summary"><div><span>Available</span><strong>{side === "buy" ? "42,800 USDC" : "12,400 B200-H"}</strong></div><div><span>Order value</span><strong>$3,170.00</strong></div><div><span>Fee</span><strong>0.15%</strong></div></div>
           <button className={`button trade-button ${side}`} onClick={() => onToast(`${side === "buy" ? "Buy" : "Sell"} order placed`, `${amount} B200 Hour Tokens are now resting at $3.17.`)}>{side === "buy" ? "Buy B200-H" : "Sell B200-H"}</button>
           <p className="checkout-note"><CheckIcon /> Tokens remain redeemable for verified B200 compute after trade settlement.</p>

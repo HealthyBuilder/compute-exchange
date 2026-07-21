@@ -4,20 +4,20 @@ import "./revenue.css";
 
 export const metadata: Metadata = {
   title: "Compute Exchange",
-  description: "Buy, lease, auction, trade, and redeem verified GPU compute from one exchange.",
+  description: "Buy, trade, hedge compute in one hub.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
   },
   openGraph: {
     title: "Compute Exchange",
-    description: "Verified GPU compute, made liquid.",
-    images: [{ url: "/og.png", width: 1672, height: 941, alt: "Compute Exchange" }],
+    description: "Buy, trade, hedge compute in one hub.",
+    images: [{ url: "/og.png", width: 1672, height: 941, alt: "Compute Future buyer trading workspace" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Compute Exchange",
-    description: "Verified GPU compute, made liquid.",
+    description: "Buy, trade, hedge compute in one hub.",
     images: ["/og.png"],
   },
 };

@@ -27,14 +27,16 @@ test("server-renders the supplier console by default", async () => {
   assert.match(html, /Your B200 capacity is ready to reach buyers\./);
   assert.match(html, /Tokenized Compute/);
   assert.match(html, /Lease Compute/);
+  assert.match(html, /Revenue/);
   assert.match(html, /Switch to buyer workspace/);
 });
 
 test("includes all buyer workflows and settlement rails", async () => {
-  const [page, layout, css] = await Promise.all([
+  const [page, layout, css, revenueCss] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/revenue.css", import.meta.url), "utf8"),
   ]);
 
   assert.match(page, /type PaymentRail = "USD" \| "USDC" \| "TOKEN"/);
@@ -42,13 +44,27 @@ test("includes all buyer workflows and settlement rails", async () => {
   assert.match(page, /function ContractTransfer/);
   assert.match(page, /function TokenAuctions/);
   assert.match(page, /function TokenMarket/);
+  assert.match(page, /BUYER WORKSPACE/);
+  assert.match(page, /Buy, trade, hedge compute in one hub/);
+  assert.match(page, /Bid on Compute Token Auction/);
+  assert.match(page, /Trade & Hedge/);
+  assert.match(page, /Compute Auctions/);
+  assert.match(page, /Compute Trading/);
+  assert.match(page, /function TokenPriceChart/);
+  assert.doesNotMatch(page, /chart-bars/);
   assert.match(page, /YOUR FINAL ALLOCATION/);
   assert.match(page, /Share capacity/);
   assert.match(page, /Transfer contract/);
   assert.match(page, /Approve & issue B200H/);
   assert.match(page, /Confirmed on Solana Devnet/);
+  assert.match(page, /REVENUE BY SOURCE/);
+  assert.match(page, /Minting fee share/);
   assert.match(layout, /Compute Exchange/);
   assert.match(css, /\.payment-rails/);
   assert.match(css, /\.allocation-flow/);
   assert.match(css, /\.order-book/);
+  assert.match(css, /\.market-layout/);
+  assert.match(css, /\.market-header/);
+  assert.match(css, /\.token-line-canvas/);
+  assert.match(revenueCss, /\.revenue-summary-grid/);
 });
