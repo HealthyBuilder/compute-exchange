@@ -562,7 +562,7 @@ function Revenue({ onNavigate, onToast }: { onNavigate: (view: View) => void; on
 
       <section className="revenue-detail-grid">
         <article className="section-block revenue-chart-card">
-          <div className="block-heading compact-heading"><div><p className="eyebrow">MONTHLY REVENUE</p><h2>Revenue keeps growing</h2></div><div className="revenue-legend"><span><i className="lease-key" /> Lease Compute</span><span><i className="token-key" /> Tokenized Compute</span></div></div>
+          <div className="block-heading compact-heading"><div><p className="eyebrow">MONTHLY REVENUE</p><h2>Monthly revenue overview</h2></div><div className="revenue-legend"><span><i className="lease-key" /> Lease Compute</span><span><i className="token-key" /> Tokenized Compute</span></div></div>
           <div className="revenue-chart" aria-label="Monthly revenue chart from March to August">
             <div className="revenue-chart-grid" aria-hidden="true"><span></span><span></span><span></span></div>
             <div className="revenue-bars">
