@@ -1,0 +1,68 @@
+.revenue-summary-grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 15px; margin-bottom: 24px; }
+.revenue-summary-card { position: relative; min-height: 130px; padding: 20px 21px; overflow: hidden; background: #fff; border: 1px solid var(--line); border-radius: 13px; box-shadow: 0 5px 16px rgba(26, 47, 84, .035); }
+.revenue-summary-card::after { content: ""; position: absolute; width: 110px; height: 110px; right: -34px; bottom: -52px; border: 18px solid #e8dcff; border-radius: 50%; }
+.revenue-summary-card.total { background: linear-gradient(130deg, #f7f0ff, #fff 72%); border-color: #e1cef9; }
+.revenue-summary-card.total::after { border-color: #d8c2ff; }
+.revenue-summary-card.available { background: linear-gradient(130deg, #effff7, #fff 72%); border-color: #d0f0e1; }
+.revenue-summary-card.available::after { border-color: #c9f3df; }
+.revenue-summary-card > span, .revenue-summary-card > strong, .revenue-summary-card > small { position: relative; z-index: 1; display: block; }
+.revenue-summary-card > span { color: #6e7e92; font-size: 11px; font-weight: 700; }
+.revenue-summary-card > strong { margin: 11px 0 7px; color: #262039; font-size: 27px; letter-spacing: -.9px; line-height: 1; }
+.revenue-summary-card > small { color: #7c8a9c; font-size: 10px; }
+.revenue-summary-card .live-dot { width: 6px; height: 6px; margin-right: 4px; }
+
+.revenue-sources { padding: 26px; }
+.revenue-source-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 17px; }
+.revenue-source-card { min-height: 305px; display: flex; flex-direction: column; padding: 22px; border: 1px solid; border-radius: 11px; }
+.lease-income { background: linear-gradient(145deg, #effff8, #fff 76%); border-color: #cbeedc; }
+.token-income { background: linear-gradient(145deg, #f8f2ff, #fff 76%); border-color: #dfcef9; }
+.revenue-source-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.revenue-period { color: #8895a6; font-size: 10px; }
+.revenue-source-amount { display: block; margin: 24px 0 7px; color: #205749; font-size: 31px; letter-spacing: -1px; line-height: 1; }
+.token-income .revenue-source-amount { color: #4c277d; }
+.revenue-source-card > p { min-height: 38px; max-width: 400px; margin-bottom: 16px; color: #66768a; font-size: 11.5px; line-height: 1.5; }
+.source-stat { display: flex; align-items: center; justify-content: space-between; padding: 9px 0; color: #66768a; border-top: 1px solid rgba(79, 151, 125, .18); font-size: 10.5px; }
+.source-stat strong { color: #175e50; font-size: 11px; }
+.revenue-source-card .text-button { margin-top: auto; }
+.lease-income .text-button { color: var(--teal); }
+.token-income-list { margin: 0 0 15px; border-top: 1px solid #eadff7; }
+.token-income-list > div { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; color: #736784; border-bottom: 1px solid #eadff7; font-size: 10.5px; }
+.token-income-list strong { color: #57328a; font-size: 10.8px; }
+
+.revenue-detail-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(330px, .75fr); gap: 24px; margin-top: 24px; align-items: stretch; }
+.revenue-chart-card, .revenue-activity-card { padding: 24px; }
+.revenue-legend { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 11px; color: #78869a; font-size: 9.5px; }
+.revenue-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.revenue-legend i { width: 8px; height: 8px; border-radius: 2px; }
+.lease-key, .revenue-lease-bar { background: linear-gradient(180deg, #58d4a4, #168e78); }
+.token-key, .revenue-token-bar { background: linear-gradient(180deg, #a76cf1, #6637c5); }
+.revenue-chart { position: relative; height: 224px; overflow: hidden; padding: 16px 17px 24px; background: linear-gradient(180deg, #fcfbfe, #f8fcfb); border: 1px solid #ebedf2; border-radius: 10px; }
+.revenue-chart-grid { position: absolute; inset: 17px 17px 37px; display: grid; grid-template-rows: repeat(3, 1fr); pointer-events: none; }
+.revenue-chart-grid span { border-top: 1px dashed #e3e8ef; }
+.revenue-chart-grid span:last-child { border-bottom: 1px dashed #e3e8ef; }
+.revenue-bars { position: relative; z-index: 1; display: flex; align-items: end; justify-content: space-around; height: 100%; gap: 14px; }
+.revenue-bar-group { width: 42px; display: grid; grid-template-rows: 1fr auto; gap: 8px; height: 100%; text-align: center; }
+.revenue-stack { display: flex; flex-direction: column-reverse; justify-content: flex-start; align-self: end; width: 100%; height: 100%; overflow: hidden; border-radius: 7px 7px 3px 3px; }
+.revenue-stack i { display: block; flex: none; width: 100%; min-height: 8px; }
+.revenue-bar-group > span { color: #8995a6; font-size: 9px; }
+.revenue-chart-note { margin: 12px 1px 0; color: #78879a; font-size: 10.5px; line-height: 1.45; }
+.revenue-activity-card { display: flex; flex-direction: column; }
+.revenue-activity-row { display: grid; grid-template-columns: 27px minmax(0, 1fr) auto; align-items: center; gap: 9px; padding: 13px 0; border-top: 1px solid #edf0f4; }
+.revenue-activity-icon { display: grid; place-items: center; width: 24px; height: 24px; color: #15725f; background: #e7faf1; border-radius: 7px; font-size: 11px; font-weight: 800; }
+.revenue-activity-icon.token { color: #6434ad; background: #f0e7ff; }
+.revenue-activity-row strong, .revenue-activity-row p { display: block; }
+.revenue-activity-row strong { margin-bottom: 3px; color: #354156; font-size: 10.7px; }
+.revenue-activity-row p { margin: 0; overflow: hidden; color: #8a95a5; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.revenue-activity-row b { color: #16715d; font-size: 10.5px; }
+.revenue-activity-card .text-button { margin-top: auto; padding-top: 15px; }
+
+@media (max-width: 900px) {
+  .revenue-source-grid, .revenue-detail-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .revenue-summary-grid { grid-template-columns: 1fr; }
+  .revenue-sources, .revenue-chart-card, .revenue-activity-card { padding: 18px; }
+  .revenue-source-card { min-height: 280px; padding: 18px; }
+  .revenue-legend { justify-content: flex-start; }
+}

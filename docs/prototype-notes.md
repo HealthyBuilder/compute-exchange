@@ -14,6 +14,7 @@ This is a product demo with switchable Supplier and Buyer workspaces. Payments, 
 
 ## Product decisions
 
+- **Supplier Revenue** separates direct lease income from Tokenized Compute income, including auction revenue plus trading and minting fee shares. All displayed revenue figures are demo data.
 - The demo has one supplier-oriented console, not separate specialist tools.
 - Capacity is always described as B200 GPU capacity. References to H100/H200 were removed.
 - The supplier has two clear Exchange options:
@@ -30,6 +31,7 @@ This is a product demo with switchable Supplier and Buyer workspaces. Payments, 
 | View | Demo purpose | Primary interaction |
 | --- | --- | --- |
 | Overview | Give the supplier an immediate state-of-business view and explain the two options. | Navigate to the Exchange or an option. |
+| Revenue | Show the supplier where revenue comes from without financial-market jargon. | Review lease income and Tokenized Compute revenue shares. |
 | Exchange | Let the supplier choose a sales option without operational jargon. | Open Tokenized Compute or Lease Compute. |
 | Tokenized Compute | Guide the supplier from capacity selection through verification, sale terms, and auction publishing. | Progress through a four-step mock flow. |
 | Lease Compute | Guide the supplier from capacity selection through lease readiness, contract terms, and publishing. | Progress through a four-step mock flow. |
@@ -40,6 +42,7 @@ This is a product demo with switchable Supplier and Buyer workspaces. Payments, 
 - Primary actions show confirmation toasts and preserve the illusion of a working product.
 - Each route-specific verification transitions from ready to running to complete using local UI state.
 - Token amount, lease term, and the sublease preference update locally in the interface.
+- Revenue values are mock data, presented as direct lease income, auction revenue, trading fee share, and minting fee share.
 
 ## Design direction
 

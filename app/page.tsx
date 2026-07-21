@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-type View = "overview" | "exchange" | "tokens" | "leases";
+type View = "overview" | "revenue" | "exchange" | "tokens" | "leases";
 type BuyerView = "dashboard" | "compute" | "contracts" | "auctions" | "market";
 type Role = "supplier" | "buyer";
 type Workflow = "token" | "lease";
@@ -30,6 +30,7 @@ type TokenIssuance =
 
 const navigation: { id: View; label: string; short: string }[] = [
   { id: "overview", label: "Overview", short: "O" },
+  { id: "revenue", label: "Revenue", short: "R" },
   { id: "exchange", label: "Exchange", short: "E" },
   { id: "tokens", label: "Tokenized Compute", short: "T" },
   { id: "leases", label: "Lease Compute", short: "L" },
@@ -195,6 +196,7 @@ export default function Home() {
         <div className="page-content">
           {role === "buyer" ? <BuyerWorkspace view={buyerView} onNavigate={setBuyerView} onToast={showToast} /> : <>
             {view === "overview" && <Overview onNavigate={openView} onToast={showToast} />}
+            {view === "revenue" && <Revenue onNavigate={openView} onToast={showToast} />}
             {view === "exchange" && <Exchange onNavigate={openView} />}
             {view === "tokens" && <Tokens step={tokenStep} setStep={setTokenStep} verification={tokenVerification} onRunVerification={() => runVerification("token")} amount={tokenAmount} setAmount={(value) => { setTokenAmount(value); setTokenIssuance({ status: "idle" }); }} issuance={tokenIssuance} onIssue={issueTokenBatch} onToast={showToast} />}
             {view === "leases" && <Leases step={leaseStep} setStep={setLeaseStep} verification={leaseVerification} onRunVerification={() => runVerification("lease")} length={leaseLength} setLength={setLeaseLength} subleaseEnabled={subleaseEnabled} setSubleaseEnabled={setSubleaseEnabled} onToast={showToast} />}
@@ -505,6 +507,82 @@ function Overview({ onNavigate, onToast }: { onNavigate: (view: View) => void; o
 
 function Metric({ label, value, detail, tone }: { label: string; value: string; detail: string; tone: string }) {
   return <article className={`metric-card ${tone}`}><p>{label}</p><strong>{value}</strong><span>{detail}</span><i /></article>;
+}
+
+function Revenue({ onNavigate, onToast }: { onNavigate: (view: View) => void; onToast: (title: string, detail: string) => void }) {
+  const monthlyRevenue = [
+    { month: "Mar", lease: 44, tokenized: 10 },
+    { month: "Apr", lease: 52, tokenized: 13 },
+    { month: "May", lease: 48, tokenized: 18 },
+    { month: "Jun", lease: 58, tokenized: 17 },
+    { month: "Jul", lease: 63, tokenized: 22 },
+    { month: "Aug", lease: 57, tokenized: 25 },
+  ];
+
+  return (
+    <>
+      <SectionTitle
+        eyebrow="SUPPLIER REVENUE"
+        title="See what your B200 capacity has earned."
+        body="Track direct lease income and your share of revenue from Tokenized Compute in one simple view."
+        action={<button className="button small" onClick={() => onToast("Revenue statement ready", "Your latest supplier revenue statement is ready to download.")}>Download statement <Arrow /></button>}
+      />
+
+      <section className="revenue-summary-grid" aria-label="Revenue summary">
+        <article className="revenue-summary-card total"><span>All-time revenue</span><strong>$184,260</strong><small>Across leases and Tokenized Compute</small></article>
+        <article className="revenue-summary-card"><span>This month</span><strong>$52,640</strong><small><i className="live-dot" /> 12.4% above last month</small></article>
+        <article className="revenue-summary-card available"><span>Available now</span><strong>$42,860</strong><small>Ready for your next payout</small></article>
+      </section>
+
+      <section className="section-block revenue-sources">
+        <div className="block-heading"><div><p className="eyebrow">REVENUE BY SOURCE</p><h2>Two clear ways your capacity earns</h2></div><p>Every amount is tied to a lease, an auction, or a platform fee share.</p></div>
+        <div className="revenue-source-grid">
+          <article className="revenue-source-card lease-income">
+            <div className="revenue-source-top"><span className="mini-label teal-label">LEASE COMPUTE</span><span className="revenue-period">This month</span></div>
+            <strong className="revenue-source-amount">$39,840</strong>
+            <p>Direct lease income from dedicated B200 contracts.</p>
+            <div className="source-stat"><span>Active lease contracts</span><strong>3</strong></div>
+            <div className="source-stat"><span>Delivered lease hours</span><strong>11,072h</strong></div>
+            <button className="text-button" onClick={() => onNavigate("leases")}>View lease contracts <Arrow /></button>
+          </article>
+
+          <article className="revenue-source-card token-income">
+            <div className="revenue-source-top"><span className="mini-label blue-label">TOKENIZED COMPUTE</span><span className="revenue-period">This month</span></div>
+            <strong className="revenue-source-amount">$12,800</strong>
+            <p>Auction revenue and your share of B200H platform fees.</p>
+            <div className="token-income-list">
+              <div><span>Auction revenue</span><strong>$9,600</strong></div>
+              <div><span>Trading fee share</span><strong>$2,400</strong></div>
+              <div><span>Minting fee share</span><strong>$800</strong></div>
+            </div>
+            <button className="text-button" onClick={() => onNavigate("tokens")}>View Tokenized Compute <Arrow /></button>
+          </article>
+        </div>
+      </section>
+
+      <section className="revenue-detail-grid">
+        <article className="section-block revenue-chart-card">
+          <div className="block-heading compact-heading"><div><p className="eyebrow">MONTHLY REVENUE</p><h2>Revenue keeps growing</h2></div><div className="revenue-legend"><span><i className="lease-key" /> Lease Compute</span><span><i className="token-key" /> Tokenized Compute</span></div></div>
+          <div className="revenue-chart" aria-label="Monthly revenue chart from March to August">
+            <div className="revenue-chart-grid" aria-hidden="true"><span></span><span></span><span></span></div>
+            <div className="revenue-bars">
+              {monthlyRevenue.map((item) => <div className="revenue-bar-group" key={item.month}><div className="revenue-stack"><i className="revenue-lease-bar" style={{ height: `${item.lease}%` }} /><i className="revenue-token-bar" style={{ height: `${item.tokenized}%` }} /></div><span>{item.month}</span></div>)}
+            </div>
+          </div>
+          <p className="revenue-chart-note">August includes $39,840 from direct leases and $12,800 from Tokenized Compute.</p>
+        </article>
+
+        <article className="section-block revenue-activity-card">
+          <div className="block-heading compact-heading"><div><p className="eyebrow">RECENT REVENUE</p><h2>Latest earnings</h2></div></div>
+          <div className="revenue-activity-row"><span className="revenue-activity-icon lease">↗</span><div><strong>Lease payment received</strong><p>CTR-SG-208 · 32 B200 GPUs</p></div><b>+$8,640</b></div>
+          <div className="revenue-activity-row"><span className="revenue-activity-icon token">◇</span><div><strong>B200H auction settled</strong><p>Auction B200-012</p></div><b>+$9,600</b></div>
+          <div className="revenue-activity-row"><span className="revenue-activity-icon token">%</span><div><strong>Trading fee share paid</strong><p>B200H marketplace activity</p></div><b>+$2,400</b></div>
+          <div className="revenue-activity-row"><span className="revenue-activity-icon token">+</span><div><strong>Minting fee share paid</strong><p>Verified B200H issuance</p></div><b>+$800</b></div>
+          <button className="text-button" onClick={() => onToast("Revenue history ready", "Your full revenue history is available in this demo.")}>View full revenue history <Arrow /></button>
+        </article>
+      </section>
+    </>
+  );
 }
 
 function Exchange({ onNavigate }: { onNavigate: (view: View) => void }) {
